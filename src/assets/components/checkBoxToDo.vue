@@ -17,7 +17,9 @@
                 </symbol>
             </svg>
         </label>
-        <input type="text" v-model="todo.text">
+        <div class="inputWrapper">
+            <input type="text" v-model="todo.text">
+        </div>
         <button class="delete" @click="deleteToDo">
             <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none"
                             xmlns="http://www.w3.org/2000/svg">
@@ -61,15 +63,53 @@ export default {
     gap: 1rem;
     width: 100%;
     flex-grow: 1;
+
+    position: relative;
 }
+.checkBoxToDo .inputWrapper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    padding: 0.5em 0.125rem;
+
+    
+    position: relative;
+}
+.checkBoxToDo .inputWrapper::before {
+    display: flex;
+    content: '';
+    position: absolute;
+
+    width: 0;
+    height: 0.0625rem;
+    background-color: #fff;
+    opacity: 0.75;
+
+    transition: all 0.2s ease-in-out;
+}
+.checkBoxToDo.done .inputWrapper::before {
+    width: 100%;
+
+    transition: all 0.1s ease-in-out;
+}
+.checkBoxToDo.done .inputWrapper:hover::before {
+    
+    opacity: 0.25;
+    transition: all 0.1s ease-in-out;
+}
+
 
 .checkBoxToDo input[type="text"] {
     flex-grow: 1;
     width: 100%;
     font-size: 1em;
-    padding: 0.5em 0.125rem;
+
     border: none;
-    border-bottom: 1px solid #60616a;
+    border-bottom: 1px solid #60616a88;
     color: #60616a;
     background: none;
     outline: transparent;
@@ -77,12 +117,12 @@ export default {
 }
 
 *:hover>.checkBoxToDo input[type="text"] {
-    border-bottom: 1px solid #aaa;
-    color: #aaa;
+    border-bottom: 1px solid #aaa8;
+    color: #aaa;   
 }
 
 .checkBoxToDo:hover input[type="text"] {
-    border-bottom: 1px solid #fff;
+    border-bottom: 1px solid #fff8;
     color: #fff;
 }
 .checkBoxToDo input[type="text"]:hover {
@@ -93,9 +133,6 @@ export default {
     padding-left: 0.5rem;
 }
 
-.done input[type="text"] {
-    text-decoration: line-through;
-}
 
 
 

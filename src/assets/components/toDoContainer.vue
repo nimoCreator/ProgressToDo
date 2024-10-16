@@ -15,6 +15,11 @@
                     ...
                 </span>
                 <div class="buttons" :class="{ show: showMenu }">
+                    <div class="divider">
+                        <span>add</span>
+                        <div class="horizontalLine"></div>
+                    </div>
+
                     <button class="add" @click="addToDo">
                         <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none"
                             xmlns="http://www.w3.org/2000/svg">
@@ -25,7 +30,18 @@
                         <span> Add CheckBox Todo </span>
                     </button>
 
+                    <div class="divider">
+                        <span>modify</span>
+                        <div class="horizontalLine"></div>
+                    </div>
+
                     <button class="toggleProgress" @click="toggleProgress">
+                        <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 5L5 19M9 7C9 8.10457 8.10457 9 7 9C5.89543 9 5 8.10457 5 7C5 5.89543 5.89543 5 7 5C8.10457 5 9 5.89543 9 7ZM19 17C19 18.1046 18.1046 19 17 19C15.8954 19 15 18.1046 15 17C15 15.8954 15.8954 15 17 15C18.1046 15 19 15.8954 19 17Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span> Toggle Progress </span>
+                    </button>
+                    <button class="toggleCountdown" @click="toggleCountdown">
                         <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none"
                             xmlns="http://www.w3.org/2000/svg">
                             <path
@@ -35,8 +51,13 @@
                                 d="M12 8V12L15 15"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
-                        <span> Toggle Progress </span>
+                        <span> Toggle Countdown </span>
                     </button>
+
+                    <div class="divider">
+                        <span>delete</span>
+                        <div class="horizontalLine"></div>
+                    </div>
 
                     <button class="clear" @click="deleteToDos">
                         <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none"
@@ -59,6 +80,13 @@
                     </button>
                 </div>
             </div>
+        </div>
+        <div class="countdownBar" v-if="this.todo.countdownVisable">
+            <div class="progress" :class="{ zero: toDoDone === 0 }" :style="{width: progressPercentage }">
+                <span class="countdownCountdown"> {{ countdownCountdown }} </span>
+                <span class="countdownPercentage"> {{ countdownPercentage }} </span>
+            </div>
+            
         </div>
         <div class="progressBar" v-if="this.todo.progressVisable">
             <div class="progress" :class="{ zero: toDoDone === 0 }" :style="{width: progressPercentage }">
@@ -120,6 +148,9 @@ export default {
         },
         toggleProgress() {
             this.todo.progressVisable = !this.todo.progressVisable;
+        },
+        toggleCountdown() {
+            this.todo.countdownVisable = !this.todo.countdownVisable;
         },
 
         toggleMenu() {
@@ -213,7 +244,22 @@ export default {
     user-select: none;
 
     position: relative;
+    font-size: 1.5rem;
+
+    border: 1px solid transparent;
+    
+    border-radius: 0.5rem;
+    transition: 0.2s;
 }
+.header .emoji:hover {
+    border: 1px solid #3c3e43;
+    transition: 0.1s;
+}
+.header .emoji:active {
+    transform: translateY(0.0625rem);
+    transition: 0.05s;
+}
+
 .header .v3-emoji-picker {
     position: absolute;
     top: 0;
@@ -232,7 +278,7 @@ export default {
     padding: 0.5rem;
 
     background-color: #282a30;
-    color: #d0d8df;
+    color: #52565a;
     border: 1px solid #3c3e43;
     border-radius: 0.5rem;
 
@@ -252,13 +298,15 @@ export default {
 
 .menu>span:hover {
     color: #fff;
+    background-color: #5e5e5e;
     transform: translateY(-0.125rem);
-
+    
     transition: 0.1s;
 }
 
 .menu>span:active {
     color: #fff;
+    background-color: #cacaca;
     transform: translateY(0.0625rem);
 
     transition: 0.05s;
@@ -293,6 +341,26 @@ export default {
     opacity: 1;
     pointer-events: all;
     transform: translateY(0rem);
+}
+.buttons > .divider {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: stretch;
+    gap: 0.25rem;
+    width: 100%;
+}
+.buttons > .divider > span {
+    color: #52565a;
+    font-size: 0.625rem;
+    user-select: none;
+    transition: 0.2s;
+}
+.buttons > .divider > .horizontalLine {
+    flex-grow: 1;
+    width: 100%;
+    height: 0.0625rem;
+    background-color: #3c3e43;
 }
 
 .buttons>button {

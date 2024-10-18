@@ -39,11 +39,15 @@ export default {
     addTodo() {
       this.todos.push({
         created: new Date(),
+        modified: new Date(),
         emoji: '📝',
         name: '',
         todos: [],
         done: false,
-        progressVisable: true
+        progressVisable: false,
+        countdownVisable: false,
+        dateStart: Date.now(),
+        dateEnd: Date.now()
       });
       this.updateLocalStorage();
     },

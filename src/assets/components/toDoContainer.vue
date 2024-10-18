@@ -30,6 +30,17 @@
                         <span> Add CheckBox Todo </span>
                     </button>
 
+                    <button class="add" @click="addToDoContainer">
+                        <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M9 11L12 14L22 4M16 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V12"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span> Add ToDo Container </span>
+                    </button>
+
+
                     <div class="divider">
                         <span>modify</span>
                         <div class="horizontalLine"></div>
@@ -81,13 +92,21 @@
                 </div>
             </div>
         </div>
-        <div class="countdownBar" v-if="this.todo.countdownVisable">
-            <div class="progress" :class="{ zero: toDoDone === 0 }" :style="{width: progressPercentage }">
-                <span class="countdownCountdown"> {{ countdownCountdown }} </span>
-                <span class="countdownPercentage"> {{ countdownPercentage }} </span>
+        <div class="countdownContainer" v-if="todo.countdownVisable">
+            <div class="countdownBar">
+                <div class="progress" :class=" ountdownClass " :style="{width: countdownPercentage }">
+                    <span class="countdownCountdown"> {{ countdownCountdown }} </span>
+                    <span class="countdownPercentage"> {{ countdownPercentage }} </span>
+                </div>
             </div>
-            
+            <div class="dateStart">
+                <input type="datetime-local" v-model="todo.dateStart">
+            </div>
+            <div class="dateEnd">
+                <input type="datetime-local" v-model="todo.dateEnd">
+            </div>
         </div>
+
         <div class="progressBar" v-if="this.todo.progressVisable">
             <div class="progress" :class="{ zero: toDoDone === 0 }" :style="{width: progressPercentage }">
                 <span> {{ progressPercentage }} </span>
@@ -115,21 +134,15 @@ export default {
             showEmojiPicker: false,
             toDoCount: 0,
             toDoDone: 0,
-            progressPercentage: "0%"
-        }
+            progressPercentage: "0%",
+            countdownCountdown: "0d 0h 0m 0s",
+            countdownPercentage: "0%",
+            countdownInerval: null,
+            countdownClass: "",
+        };
     },
     props: {
         modelValue: Object 
-    },
-    computed: {
-        todo: {
-            get() {
-                return this.modelValue;  
-            },
-            set(value) {
-                this.$emit('update:modelValue', value); 
-            }
-        }
     },
     methods: {
         addToDo() {
@@ -174,14 +187,64 @@ export default {
             this.toDoDone = this.todo.todos.filter(todo => todo.done).length;
             this.toDoCount = this.todo.todos.length;
             this.progressPercentage = `${Math.round(this.toDoDone / this.toDoCount * 100)}%`;
+        },
+
+        updateCountdown()
+        {
+            let now = new Date();
+            let start = new Date(this.todo.dateStart);
+            let end = new Date(this.todo.dateEnd);
+
+            if(start > end)
+            {
+                let temp = start;
+                start = end;
+                end = temp;
+                this.todo.dateStart = start.toISOString().slice(0, 16);
+                this.todo.dateEnd = end.toISOString().slice(0, 16);
+            }
+
+            let total = end - start;
+            let remaining = end - now;
+            let percentage = Math.round(
+                (now - start) / total * 100
+            );
+            
+
+
+
+            if( now > end )
+            {
+                this.countdownPercentage = "100%";
+                this.countdownCountdown = "Late";
+                this.countdownClass = "late";
+            }
+            else if( now < start )
+            {
+                this.countdownPercentage = "100%";
+                this.countdownCountdown =  "Early";
+                this.countdownClass = "early";
+            }
+            else
+            {
+                this.countdownPercentage = `${percentage}%`;
+                this.countdownCountdown = `${Math.round(remaining / 1000 / 60 / 60 / 24)}d ${Math.round(remaining / 1000 / 60 / 60 % 24)}h ${Math.round(remaining / 1000 / 60 % 60)}m ${Math.round(remaining / 1000 % 60)}s`;
+                this.countdownClass = "";
+            }    
         }
     },
     mounted() {
         this.updateProgress();
         document.addEventListener('click', this.handleClickOutside);
+    
+        this.countdownInerval = setInterval(() => {
+            this.updateCountdown();
+        }, 1000);
     },
     beforeUnmount() {
         document.removeEventListener('click', this.handleClickOutside);
+
+        clearInterval(this.countdownInerval);
     },
     watch : {
         'todo.todos': {
@@ -190,6 +253,16 @@ export default {
             },
             deep: true
         }
+    },
+    computed: {
+        todo: {
+            get() {
+                return this.modelValue;  
+            },
+            set(value) {
+                this.$emit('update:modelValue', value); 
+            }
+        },
     }
 
 
@@ -428,6 +501,106 @@ export default {
 }
 .progressBar .progress.zero span {
     width: 100% !important;
+    text-align: center;
+}
+
+
+
+.countdownContainer {
+    width: 100%;
+    gap: 0.25rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "dateStart dateEnd" "progress progress";
+}
+.countdownBar {
+    grid-area: progress;
+
+    width: 100%;
+    height: 0.75rem;
+    background-color: #282a30;
+    border-radius: 0.625rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+.countdownBar .progress {
+
+    height: 100%;
+    background-color: #00aaff;
+    border-radius: 0.5rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.2s;
+
+    position: relative;
+}
+.countdownBar .progress span {
+    color: #fff;
+    font-size: 0.625em;
+    font-weight: 900;
+
+    text-overflow: clip;
+    white-space: nowrap;
+
+    position: absolute;
+}
+.countdownBar .progress.early {
+    width: 100% !important;
+    background-color: #00ff00;
+}
+.countdownBar .progress.late {
+    width: 100% !important;
+    background-color: #ff0000;
+}
+
+.countdownBar .progress.early span,
+.countdownBar .progress.late span {
+    width: 100% !important;
+    text-align: center;
+}
+
+
+.countdownContainer .progress .countdownCountdown {
+    color: #fff;
+}
+.countdownContainer:hover .progress .countdownCountdown {
+    color: #fff0;
+}
+.countdownContainer .progress .countdownPercentage {
+    color: #fff0;
+}
+.countdownContainer:hover .progress .countdownPercentage {
+    color: #fff;
+}
+
+.countdownContainer .dateStart {
+    grid-area: dateStart;
+    place-self: start start;
+}
+.countdownContainer .dateEnd {
+    grid-area: dateEnd;
+    place-self: start end;
+}
+.countdownContainer .dateStart,
+.countdownContainer .dateEnd {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.countdownContainer .dateStart input,
+.countdownContainer .dateEnd input {
+    padding: 0.125rem;
+    border: 1px solid #3c3e43;
+    border-radius: 0.25rem;
+    background-color: #282a30;
+    color: #fff;
+    fill: #fff;
+    font-size: 0.75rem;
     text-align: center;
 }
 </style>

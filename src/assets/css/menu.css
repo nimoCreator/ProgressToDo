@@ -1,0 +1,277 @@
+.buttons {
+    display: flex;
+    column-span: all;
+    gap: 1rem;
+    justify-content: stretch;
+    align-items: center;
+}
+.buttons > * {
+    flex: 1 1 100%;
+}
+button,
+.honoraryButton {
+    padding: 0.5rem;
+
+
+    color: #7c8187;
+    background-color: #282a30;
+    border: 1px solid #3c3e43;
+    border-radius: 0.5rem;
+
+    cursor: pointer;
+    user-select: none;
+
+    transition: 0.2s;
+}
+button:hover {
+    color: #fff;
+    transform: translateY(-0.125rem);
+
+    transition: 0.1s;
+}
+button:active {
+    color: #fff;
+    transform: translateY(0.0625rem);
+
+    transition: 0.05s;
+}
+
+button:hover        { background-color: #5e5e5e;}
+button:active       { background-color: #cacaca;}
+button.add:hover        { background-color: #316841;}
+button.add:active       { background-color: #00cc2c;}
+button.delete:hover     { background-color: #70393d;}
+button.delete:active    { background-color: #d43a3a; }
+button.clear:hover      { background-color: #70393d;}
+button.clear:active     { background-color: #d43a3a; }
+
+button svg,
+.honoraryButton svg {
+    width: 1rem;
+    height: 1rem;
+    opacity: 0.5;
+
+    transition: 0.2s;
+}
+button:hover svg,
+.honoraryButton:hover svg,
+.honoraryButton:focus-within svg  {
+    opacity: 1;
+
+    transition: 0.1s;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.honoraryButton {
+    padding: 0 0 0 0.5rem;
+    border: 1px solid #3c3e43;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: 0.2s;
+
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-grow: 1;
+    width: 100%;
+}
+
+.honoraryButton > svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.honoraryButton > span {
+    flex-grow: 1;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.honoraryButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+}
+.honoraryButton input {
+    color-scheme: dark light;
+
+    padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+    color: #7c8187 !important;
+    background-color: #282a30;
+    border: 1px solid #3c3e43;
+    border-radius:  0 0.5rem 0.5rem 0;
+    cursor: pointer;
+    user-select: none;
+    transition: 0.2s;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+
+    transition: 0.2s;
+}
+.honoraryButton:hover,
+.honoraryButton:focus-within,
+.honoraryButton:active,
+.honoraryButton:focus,
+.honoraryButton:focus-visible,
+.honoraryButton:hover input,
+.honoraryButton:focus-within input,
+.honoraryButton:active input,
+.honoraryButton:focus input,
+.honoraryButton:focus-visible input
+{
+    color: #fff !important;
+    background-color: #5e5e5e;
+    transition: 0.1s;
+}
+.honoraryButton:hover input {
+    color: #fff !important;
+    border-color: #7c8187;
+
+
+    transition: 0.1s;
+}
+.honoraryButton:focus-within input,
+.honoraryButton:active input,
+.honoraryButton:focus input,
+.honoraryButton:focus-visible input {
+    outline: #00aaff88 0.125rem solid;
+}
+
+.menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.menu>span {
+    padding: 0.5rem;
+
+    background-color: #282a30;
+    color: #52565a;
+    border: 1px solid #3c3e43;
+    border-radius: 0.5rem;
+
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 2rem;
+    height: 2rem;
+
+    cursor: pointer;
+    user-select: none;
+
+    transition: 0.2s;
+}
+
+.menu>span:hover {
+    color: #fff;
+    background-color: #5e5e5e;
+    transform: translateY(-0.125rem);
+    
+    transition: 0.1s;
+}
+
+.menu>span:active {
+    color: #fff;
+    background-color: #cacaca;
+    transform: translateY(0.0625rem);
+
+    transition: 0.05s;
+}
+
+.buttons {
+    position: absolute;
+    top: 0;
+    right: calc( 100% + 0.5rem );
+
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    gap: 0.5rem;
+
+    padding: 0.25rem;
+    background-color: #1e1f24;
+    border: 2px solid #282a30;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
+
+    transition: all 0.1s;
+    transform: translateY(-0.5rem);
+
+    opacity: 0;
+    pointer-events: none;
+
+    z-index: 2;
+}
+
+.buttons.show {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0rem);
+}
+.buttons > .divider {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: stretch;
+    gap: 0.25rem;
+    width: 100%;
+}
+.buttons > .divider > span {
+    color: #52565a;
+    font-size: 0.625rem;
+    user-select: none;
+    transition: 0.2s;
+}
+.buttons > .divider > .horizontalLine {
+    flex-grow: 1;
+    width: 100%;
+    height: 0.0625rem;
+    background-color: #3c3e43;
+}
+
+.buttons>button{
+    padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+    border: 1px solid #3c3e43;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: 0.2s;
+
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-grow: 1;
+    width: 100%;
+}
+
+.buttons>button>svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.buttons>button>span {
+    flex-grow: 1;
+    text-align: left;
+    white-space: nowrap;
+}

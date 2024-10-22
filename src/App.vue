@@ -1,8 +1,9 @@
 <template>
   <div class="gridPanel">
-    <toDoContainer v-for="(e, index) in todos" :key="index" v-model="todos[index]"
-      @deleteToDoContainer="deleteToDoContainer(index)" />
-    <div class="buttons">
+    
+    <toDoList v-for="(e, index) in todos" :key="index" v-model="todos[index]"
+      @deleteToDoList="deleteToDoList(index)" />
+    <div class="mainButtons">
       Global:
       <button class="add" @click="addTodo">
         <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -23,12 +24,12 @@
 </template>
 
 <script>
-import toDoContainer from '@/assets/components/toDoContainer.vue'
+import toDoList from '@/assets/components/toDoList.vue'
 
 export default {
   name: 'App',
   components: {
-    toDoContainer
+    toDoList
   },
   data() {
     return {
@@ -38,12 +39,15 @@ export default {
   methods: {
     addTodo() {
       this.todos.push({
+        type: 'list',
         created: new Date(),
         modified: new Date(),
         emoji: '📝',
         name: '',
         todos: [],
-        done: false,
+        done: 0,
+        weight: 1,
+        progressBinary: false,
         progressVisable: false,
         countdownVisable: false,
         dateStart: Date.now(),
@@ -57,8 +61,8 @@ export default {
     loadLocalStorage() {
       this.todos = JSON.parse(localStorage.getItem('todos')) || [];
     },
-    deleteToDoContainer(index) {
-      this.todos.splice(index, 1); // Remove the container from the list
+    deleteToDoList(index) {
+      this.todos.splice(index, 1); 
       this.updateLocalStorage();
     },
     clearLocalStorage() {
@@ -81,6 +85,56 @@ export default {
 </script>
 
 
-<style>
+<style scoped>
+
 @import url("@/assets/css/base.css");
+
+
+.mainButtons {
+    display: flex;
+    column-span: all;
+    gap: 1rem;
+    justify-content: stretch;
+    align-items: center;
+}
+.mainButtons > * {
+    flex: 1 1 100%;
+}
+button,
+.honoraryButton {
+    padding: 0.5rem;
+
+
+    color: #7c8187;
+    background-color: #282a30;
+    border: 1px solid #3c3e43;
+    border-radius: 0.5rem;
+
+    cursor: pointer;
+    user-select: none;
+
+    transition: 0.2s;
+}
+button:hover {
+    color: #fff;
+    transform: translateY(-0.125rem);
+
+    transition: 0.1s;
+}
+button:active {
+    color: #fff;
+    transform: translateY(0.0625rem);
+
+    transition: 0.05s;
+}
+
+button:hover        { background-color: #5e5e5e;}
+button:active       { background-color: #cacaca;}
+button.add:hover        { background-color: #316841;}
+button.add:active       { background-color: #00cc2c;}
+button.delete:hover     { background-color: #70393d;}
+button.delete:active    { background-color: #d43a3a; }
+button.clear:hover      { background-color: #70393d;}
+button.clear:active     { background-color: #d43a3a; }
+
 </style>

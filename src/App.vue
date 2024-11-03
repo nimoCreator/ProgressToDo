@@ -1,8 +1,9 @@
 <template>
   <div class="gridPanel">
     
-    <toDoList v-for="(e, index) in todos" :key="index" v-model="todos[index]"
-      @deleteToDoList="deleteToDoList(index)" />
+    <toDoList v-for="(e, index) in todos" :key="index" v-model="todos[index]" @deleteToDoList="deleteToDoList(index)" />
+
+
     <div class="mainButtons">
       Global:
       <button class="add" @click="addTodo">

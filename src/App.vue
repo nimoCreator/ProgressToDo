@@ -1,50 +1,66 @@
 <template>
-  <div class="gridPanel">
-    
-    <toDoList v-for="(e, index) in todos" :key="index" v-model="todos[index]" @deleteToDoList="deleteToDoList(index)" />
-
-
-    <div class="mainButtons">
-      Global:
-      <button class="add" @click="addTodo">
-        <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M12 8V16M8 12H16M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+  <div id="appWrapper">
+    <!-- <div class="cloud">
+      cloud
+    </div> -->
+    <div id="menu">
+      <button>
+        <CloudIcon />
+        <span>cloud</span>
       </button>
-      <button class="clear" @click="clearLocalStorage">
-        <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M9 3H15M3 6H21M19 6L18.2987 16.5193C18.1935 18.0975 18.1409 18.8867 17.8 19.485C17.4999 20.0118 17.0472 20.4353 16.5017 20.6997C15.882 21 15.0911 21 13.5093 21H10.4907C8.90891 21 8.11803 21 7.49834 20.6997C6.95276 20.4353 6.50009 20.0118 6.19998 19.485C5.85911 18.8867 5.8065 18.0975 5.70129 16.5193L5 6"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+      <button>
+        <ArchiveStorageIcon />
+        <span>archive</span>
+      </button>
+    </div>
+    <div id="gridPanel">
+      <toDoList
+        v-for="(e, index) in todos"
+        :key="index"
+        v-model="todos[index]"
+        @deleteToDo="deleteToDo(index)"
+      />
+      <button @click="addTodo" class="addTodo">
+        <plusIcon />
+      </button>
+    </div>
+    <div class="mainButtons">
+      <button @click="scrollTop" class="scrollTop">
+        <ArrowUpIcon />
       </button>
     </div>
   </div>
 </template>
 
 <script>
-import toDoList from '@/assets/components/toDoList.vue'
+import toDoList from "@/assets/components/toDoList.vue";
+import plusIcon from "@/assets/svg/PlusSymbolIcon.vue";
+import ArrowUpIcon from "@/assets/svg/ArrowUpIcon.vue";
+import CloudIcon from "@/assets/svg/CloudIcon.vue";
+import ArchiveStorageIcon from "./assets/svg/ArchiveStorageIcon.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
-    toDoList
+    toDoList,
+    plusIcon,
+    ArrowUpIcon,
+    CloudIcon,
+    ArchiveStorageIcon,
   },
   data() {
     return {
-      todos: []
-    }
+      todos: [],
+    };
   },
   methods: {
     addTodo() {
       this.todos.push({
-        type: 'list',
+        type: "list",
         created: new Date(),
         modified: new Date(),
-        emoji: '📝',
-        name: '',
+        emoji: "📝",
+        name: "",
         todos: [],
         done: 0,
         weight: 1,
@@ -52,24 +68,35 @@ export default {
         progressVisable: false,
         countdownVisable: false,
         dateStart: Date.now(),
-        dateEnd: Date.now()
+        dateEnd: Date.now(),
+
+        cloudListName: "",
+        cloudLists: [],
       });
       this.updateLocalStorage();
     },
     updateLocalStorage() {
-      localStorage.setItem('todos', JSON.stringify(this.todos));
+      localStorage.setItem("todos", JSON.stringify(this.todos));
     },
     loadLocalStorage() {
-      this.todos = JSON.parse(localStorage.getItem('todos')) || [];
+      this.todos = JSON.parse(localStorage.getItem("todos")) || [];
     },
-    deleteToDoList(index) {
-      this.todos.splice(index, 1); 
+    deleteToDo(index) {
+      this.todos.splice(index, 1);
       this.updateLocalStorage();
     },
     clearLocalStorage() {
-      localStorage.removeItem('todos');
-      this.todos = [];
-    }
+      if (confirm("Are you sure you want to delete all your todos?")) {
+        localStorage.removeItem("todos");
+        this.todos = [];
+      }
+    },
+    scrollTop() {
+      document.getElementById("gridPanel").scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    },
   },
   created() {
     this.loadLocalStorage();
@@ -79,63 +106,116 @@ export default {
       handler() {
         this.updateLocalStorage();
       },
-      deep: true
-    }
-  }
-}
+      deep: true,
+    },
+  },
+};
 </script>
 
 
-<style scoped>
-
+<style>
 @import url("@/assets/css/base.css");
 
-
 .mainButtons {
-    display: flex;
-    column-span: all;
-    gap: 1rem;
-    justify-content: stretch;
-    align-items: center;
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+
+  display: flex;
+  gap: 1rem;
+  justify-content: stretch;
+  align-items: center;
+
+  width: min-content;
+  padding: 0.5rem;
+  margin-left: auto;
+
+  color: #7c8187;
+  background-color: #1e1f24;
+  border: 1px solid #3c3e43;
+  border-radius: 0.5rem;
 }
-.mainButtons > * {
-    flex: 1 1 100%;
+.cloud {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  align-items: stretch;
+
+  width: min-content;
+  padding: 0.5rem;
+
+  color: #7c8187;
+  background-color: #1e1f24;
+  border: 1px solid #3c3e43;
+  border-radius: 0.5rem;
+
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
 }
-button,
-.honoraryButton {
-    padding: 0.5rem;
-
-
-    color: #7c8187;
-    background-color: #282a30;
-    border: 1px solid #3c3e43;
-    border-radius: 0.5rem;
-
-    cursor: pointer;
-    user-select: none;
-
-    transition: 0.2s;
+.cloud > * {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  align-items: stretch;
 }
-button:hover {
-    color: #fff;
-    transform: translateY(-0.125rem);
-
-    transition: 0.1s;
-}
-button:active {
-    color: #fff;
-    transform: translateY(0.0625rem);
-
-    transition: 0.05s;
+.cloud input {
+  padding: 0.5rem;
+  color: #7c8187;
+  background-color: transparent;
+  border: 1px solid #3c3e43;
+  border-radius: 0.5rem;
 }
 
-button:hover        { background-color: #5e5e5e;}
-button:active       { background-color: #cacaca;}
-button.add:hover        { background-color: #316841;}
-button.add:active       { background-color: #00cc2c;}
-button.delete:hover     { background-color: #70393d;}
-button.delete:active    { background-color: #d43a3a; }
-button.clear:hover      { background-color: #70393d;}
-button.clear:active     { background-color: #d43a3a; }
+.addTodo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
+  min-width: 25rem;
+
+  padding: 3rem;
+
+  color: #3c3e43;
+  background: none !important;
+  border: 0 transparent solid;
+  outline: 0.125rem dashed #3c3e43;
+  border-radius: 0.5rem;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition: 0.2s;
+  box-shadow: none !important;
+}
+.addTodo:hover {
+  background: none;
+  color: #7c8187;
+  
+  outline: 0.125rem dashed #7c8187;
+
+  transform: none;
+}
+
+#menu {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+
+  color: #7c8187;
+  background-color: #1e1f24;
+  border: 1px solid #3c3e43;
+  border-radius: 0.5rem;
+
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+
+  height: 4rem;
+
+  z-index: 5;
+}
 </style>

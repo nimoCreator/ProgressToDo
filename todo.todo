@@ -1,0 +1,43 @@
+
+Core Features: 
+- Implement task filtering
+- Implement task ordering
+- Add search bar
+- Add tag system with color support
+- Add drag-and-drop for reordering
+- Add reminders system with notification support
+- Add recurring tasks logic
+- Add calendar view and task syncing
+- Add task dependencies
+
+Cloud & Sync:
+- Set up user accounts and login
+- Implement cloud sync for todos
+- Support offline mode with localStorage fallback
+
+AI Features: 
+- Add AI-generated task suggestions based on existing tasks
+- Implement AI-powered task generation from freeform notes
+- Build AI to recommend next task to do
+- Add AI planning assistant for daily agendas
+
+UX Improvements: 
+- Add checklist/subtask support
+- Add priority levels with visual indicators
+- Add focus mode for distraction-free view
+
+Visualization & Productivity: 
+- Add stats dashboard (e.g. tasks done per week)
+- Add goal tracking (e.g. 5 tasks/day)
+- Add task heatmap or streak calendar
+
+Collaboration (Future Phase): 
+- Add support for shared lists
+- Enable commenting and mentions on tasks
+- Add real-time sync for collaborative lists
+
+Polish & Extras: 
+- Add animations to drag/drop
+- Polish mobile UI
+- Add themes / light mode
+- Add app onboarding tips or tutorial

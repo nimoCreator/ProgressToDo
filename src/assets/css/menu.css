@@ -44,6 +44,8 @@ button.delete:hover     { background-color: #70393d;}
 button.delete:active    { background-color: #d43a3a; }
 button.clear:hover      { background-color: #70393d;}
 button.clear:active     { background-color: #d43a3a; }
+button.nimo:hover      { background-color: #00aaff;}
+button.nimo:active     { background-color: #00aaff; }
 
 button svg,
 .honoraryButton svg {
@@ -107,6 +109,7 @@ button:hover svg,
     position: relative;
 }
 .honoraryButton input {
+    flex: 1;
     color-scheme: dark light;
 
     padding: 0.5rem 0.5rem 0.5rem 0.5rem;
@@ -129,15 +132,18 @@ button:hover svg,
 .honoraryButton:focus-within,
 .honoraryButton:active,
 .honoraryButton:focus,
-.honoraryButton:focus-visible,
+.honoraryButton:focus-visible
+{
+    color: #fff !important;
+    background-color: #5e5e5e;
+    transition: 0.1s;
+}
 .honoraryButton:hover input,
 .honoraryButton:focus-within input,
 .honoraryButton:active input,
 .honoraryButton:focus input,
-.honoraryButton:focus-visible input
-{
+.honoraryButton:focus-visible input {
     color: #fff !important;
-    background-color: #5e5e5e;
     transition: 0.1s;
 }
 .honoraryButton:hover input {
@@ -146,12 +152,6 @@ button:hover svg,
 
 
     transition: 0.1s;
-}
-.honoraryButton:focus-within input,
-.honoraryButton:active input,
-.honoraryButton:focus input,
-.honoraryButton:focus-visible input {
-    outline: #00aaff88 0.125rem solid;
 }
 
 .menu {
@@ -201,8 +201,8 @@ button:hover svg,
 
 .buttons {
     position: absolute;
-    top: 0;
-    right: calc( 100% + 0.5rem );
+    top: calc( 100% + 0.5rem );
+    right: 0;
 
     display: flex;
     flex-direction: column;
@@ -275,3 +275,5 @@ button:hover svg,
     text-align: left;
     white-space: nowrap;
 }
+
+

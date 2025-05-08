@@ -43,14 +43,12 @@ body {
 
     overflow-y: visible;
 
-    padding-top: 6rem;
 }
 
 #gridPanel > .toDo {
     flex-grow: 1;
     min-width: 25rem;
     padding: 1rem;
-    background-color: #1e1f24;
     border-radius: 0.5rem;
     box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
 }
@@ -151,3 +149,81 @@ button.clear:hover {
 button.clear:active {
     background-color: #d43a3a;
 }
+
+button.star:hover {
+    background-color: #686331;
+}
+button.star:active {
+    background-color: #cc8b00;
+}
+button.urgent:hover {
+    background-color: #683331;
+}
+button.urgent:active {
+    background-color: #d43a3a;
+}
+button.color:hover {
+    background-color: color-mix(in srgb, #5e5e5e, var(--backgroundColor) 20%);
+}
+button.color:active {
+    background-color: color-mix(in srgb, #cacaca, var(--backgroundColor) 50%);
+}
+
+
+.buttons .colorPallete {
+    position: absolute;
+    top: 0;
+    right: calc(100% + 0.5rem);
+    z-index: 1000;
+}
+
+
+
+
+.medals {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+.medal {
+
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background-color: #282a30;
+    color: #fff4;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-top: -0.75rem;
+}
+.medal:first-child {
+    margin-top: 0;
+}
+.medal svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+.archivedMedal svg {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+.starMedal {
+    background-color: #f1a129;
+    background: linear-gradient(45deg, #ec6e1a, #ffd23d);
+    color: #fffa;
+}
+.urgentMedal {
+    background-color: #d43a3a;
+    background: linear-gradient(45deg, #f01212, #f57b18);
+    color: #fffa;
+}
+.archivedMedal {
+    background-color: #3c3e43;
+    background: linear-gradient(45deg, #3c3e43, #5e5e5e);
+    color: #fffa;
+}
+

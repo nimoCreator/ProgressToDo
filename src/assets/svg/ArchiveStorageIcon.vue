@@ -1,3 +1,5 @@
 <template>
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" width="24" height="24" viewBox="0 0 24 24" class="humbleicons hi-archive"><g xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2"><path stroke-linejoin="round" d="M3 5a1 1 0 011-1h16a1 1 0 011 1v3H3V5z"/><path stroke-linecap="round" d="M9.5 13h5"/><path stroke-linejoin="round" d="M4 8h16v11a1 1 0 01-1 1H5a1 1 0 01-1-1V8z"/></g></svg>
-</template>
+    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+        <path
+            d="M200-80q-33 0-56.5-23.5T120-160v-451q-18-11-29-28.5T80-680v-120q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v120q0 23-11 40.5T840-611v451q0 33-23.5 56.5T760-80H200Zm0-520v440h560v-440H200Zm-40-80h640v-120H160v120Zm240 280h160q17 0 28.5-11.5T600-440q0-17-11.5-28.5T560-480H400q-17 0-28.5 11.5T360-440q0 17 11.5 28.5T400-400Zm80 20Z" />
+    </svg></template>

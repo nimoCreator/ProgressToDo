@@ -60,6 +60,12 @@
     <div id="gridPanel">
       <toDoList v-for="(todo, index) in visibleTodos" :key="todo.id" v-model="visibleTodos[index]"
         @deleteToDo="deleteToDo(index)" />
+        <div class="emptyState" v-if="visibleTodos.length === 0">
+          <p class="inlineTooltipBig">No todos found</p>
+          <p class="inlineTooltip">Click the plus icon below to add a new todo!</p>
+          <div class="flexRowOr"><hr/>or<hr/> </div>
+          <button>Click here to load the Demo!</button>
+        </div>
       <button @click="addTodo" class="addTodo">
         <plusIcon />
       </button>
@@ -198,7 +204,7 @@ import PasteIcon from "@/assets/svg/PasteIcon.vue";
 import nimoIcon from "@/assets/svg/nimoIcon.vue";
 
 import { appVersion, releaseDate } from "./assets/js/consts";
-import GlobeIcon from "./assets/svg/globeIcon.vue";
+import GlobeIcon from "./assets/svg/GlobeIcon.vue";
 import EnvelopeIcon from "./assets/svg/envelopeIcon.vue";
 import FolderIcon from "./assets/svg/folderIcon.vue";
 
@@ -1660,5 +1666,41 @@ export default {
   100% {
     box-shadow: 0 0 0 10px #00aaff00;
   }
+}
+
+
+
+
+.emptyState {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+
+  flex-direction: column;
+  gap: 0.25rem;
+
+  min-width: 25rem;
+}
+.emptyState .inlineTooltipBig {
+  color: #7c8187;
+  font-size: 1.5rem;
+}
+.emptyState .inlineTooltip {
+
+}
+.flexRowOr {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+
+  color: #7c8187;
+}
+.flexRowOr hr {
+  flex-grow: 1;
+  height: 0.0625rem;
+  background-color: #7c8187;
+  border-color: #7c8187;
 }
 </style>

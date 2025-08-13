@@ -1,143 +1,152 @@
 <template>
     <div :class="{ toDo: true, hasCountdown: todo.countdownVisable, hasProgress: todo.progressVisable }"
-        :style="{ '--color': todo.color }"
-        :id="todo.id">
-        <div class="header">
-            <div class="medals" v-if="anyMedal">
-                <div v-if="todo.star" class="medal starMedal">
-                    <StarIconFilled />
+        :style="{ '--color': todo.color }" :id="todo.id">
+        <span class="dragHandle dragHandleList" title="Drag list"></span>
+
+        <div class="content">
+            <div class="header">
+                <div class="medals" v-if="anyMedal">
+                    <div v-if="todo.star" class="medal starMedal">
+                        <span class="material-symbols-rounded icon fill">star</span>
+                    </div>
+                    <div v-if="todo.urgent" class="medal urgentMedal">
+                        <span class="material-symbols-rounded icon fill">mode_heat</span>
+                    </div>
+                    <div v-if="todo.archived" class="medal archivedMedal">
+                        <span class="material-symbols-rounded icon fill">inventory_2</span>
+                    </div>
                 </div>
-                <div v-if="todo.urgent" class="medal urgentMedal">
-                    <FireIconFilled />
+
+                <div class="emoji" @click="toggleEmojiPicker"> {{ todo.emoji || '📝' }} </div>
+                <emoji-picker @click.stop v-if="showEmojiPicker" @select="selectEmoji" theme="auto" />
+                <input type="text" class="toDoName" v-model="todo.name">
+                <div class="menu" @click.stop="toggleMenu">
+                    <span class="menuOpenButton"> ... </span>
+                    <div class="buttons" :class="{ show: showMenu }">
+                        <div class="divider">
+                            <span>add</span>
+                            <div class="horizontalLine"></div>
+                        </div>
+
+                        <button class="add" @click.stop="addCheckBoxToDo">
+                            <span class="material-symbols-rounded icon">check_box</span>
+                            <span class="buttonLabel"> Add CheckBox Todo </span>
+                        </button>
+
+                        <button class="add" @click.stop="addBarToDo">
+                            <span class="material-symbols-rounded icon">switches</span>
+                            <span class="buttonLabel"> Add ToDo Bar </span>
+                        </button>
+
+                        <button class="add" @click.stop="addToDoList">
+                            <span class="material-symbols-rounded icon">lists</span>
+                            <span class="buttonLabel"> Add ToDo List </span>
+                        </button>
+
+                        <div class="divider">
+                            <span>highlight</span>
+                            <div class="horizontalLine"></div>
+                        </div>
+                        <button class="star" @click.stop="toggleStared" :class="{ fill: todo.star }">
+                            <span class="material-symbols-rounded icon" :class="{ fill: todo.star }">star</span>
+                            <span class="buttonLabel"> Star</span>
+                        </button>
+                        <button class="urgent" @click.stop="toggleUrgent" :class="{ fill: todo.urgent }">
+                            <span class="material-symbols-rounded icon" :class="{ fill: todo.urgent }">mode_heat</span>
+                            <span class="buttonLabel"> Urgent </span>
+                        </button>
+                        <button class="archived" @click.stop="toggleArchived" :class="{ fill: todo.archived }">
+                            <span class="material-symbols-rounded icon"
+                                :class="{ fill: todo.archived }">inventory_2</span>
+                            <span class="buttonLabel"> Archive </span>
+                        </button>
+                        <button class="color" @click.stop="openColorPallete"
+                            :style="{ '--backgroundColor': todo.color }">
+                            <span class="material-symbols-rounded icon">palette</span>
+                            <span class="buttonLabel"> Change Color </span>
+                        </button>
+                        <div class="colorPallete" v-if="showColorPallete" @click.stop>
+                            <nimoColorPicker v-model="todo.color" />
+                        </div>
+
+                        <div class="divider">
+                            <span>modify</span>
+                            <div class="horizontalLine"></div>
+                        </div>
+
+                        <button class="toggleProgress" @click.stop="toggleProgress">
+                            <span class="material-symbols-rounded icon">percent</span>
+                            <span class="buttonLabel"> {{ todo.progressVisable ? "Hide Progress" : "Show Progress" }}
+                            </span>
+                        </button>
+
+                        <button class="toggleCountdown" @click.stop="toggleCountdown">
+                            <span class="material-symbols-rounded icon">timer</span>
+                            <span class="buttonLabel"> {{ todo.countdownVisable ? "Hide Countdown" : "Show countdown" }}
+                            </span>
+                        </button>
+
+                        <button class="toggleBinaryProgress" @click.stop="toggleBinaryProgress">
+                            <span class="material-symbols-rounded icon">show_chart</span>
+                            <span class="buttonLabel"> {{ todo.progressBinary ? "Linear Progress" : "Binary Progress" }}
+                            </span>
+                        </button>
+
+                        <div class="honoraryButton" @click.stop>
+                            <span class="material-symbols-rounded icon">balance</span>
+                            <input @click.stop type="number" v-model="todo.weight" />
+                        </div>
+
+
+                        <div class="divider">
+                            <span>delete</span>
+                            <div class="horizontalLine"></div>
+                        </div>
+
+                        <button class="clear" @click.stop="clearToDoList">
+
+                            <span class="material-symbols-rounded icon">cleaning_services</span>
+                            <span class="buttonLabel"> Clear ToDoList </span>
+                        </button>
+
+                        <button class="delete" @click.stop="deleteToDo">
+                            <span class="material-symbols-rounded icon">delete</span>
+                            <span class="buttonLabel"> Delete List </span>
+                        </button>
+                    </div>
                 </div>
-                <div v-if="todo.archived" class="medal archivedMedal">
-                    <ArchiveIconFilled />
+            </div>
+            <div class="countdownContainer" v-if="todo.countdownVisable">
+                <div class="countdownBar">
+                    <div class="progress" :class="countdownClass" :style="{ width: countdownPercentage, '--textColor': contrastColor }">
+                        <span class="countdownCountdown" > {{ countdownCountdown }} </span>
+                        <span class="countdownPercentage" > {{ countdownPercentage }} </span>
+                    </div>
+                </div>
+                <div class="dateStart">
+                    <input type="datetime-local" v-model="todo.dateStart">
+                </div>
+                <div class="dateEnd">
+                    <input type="datetime-local" v-model="todo.dateEnd">
                 </div>
             </div>
 
-            <div class="emoji" @click="toggleEmojiPicker"> {{ todo.emoji || '📝' }} </div>
-            <emoji-picker @click.stop v-if="showEmojiPicker" @select="selectEmoji" theme="auto" />
-            <input type="text" class="toDoName" v-model="todo.name">
-            <div class="menu" @click.stop="toggleMenu">
-                <span> ... </span>
-                <div class="buttons" :class="{ show: showMenu }">
-                    <div class="divider">
-                        <span>add</span>
-                        <div class="horizontalLine"></div>
-                    </div>
-
-                    <button class="add" @click.stop="addCheckBoxToDo">
-                        <CheckBoxToDoIcon />
-                        <span> Add CheckBox Todo </span>
-                    </button>
-
-                    <button class="add" @click.stop="addBarToDo">
-                        <BarToDoIcon />
-                        <span> Add ToDo Bar </span>
-                    </button>
-
-                    <button class="add" @click.stop="addToDoList">
-                        <ListToDoIcon />
-                        <span> Add ToDo List </span>
-                    </button>
-
-                    <div class="divider">
-                        <span>highlight</span>
-                        <div class="horizontalLine"></div>
-                    </div>
-                    <button class="star" @click.stop="toggleStared" :class="{ fill: todo.star }">
-                        <StarIconFilled v-if="todo.star" />
-                        <StarIcon v-else />
-                        <span> Star</span>
-                    </button>
-                    <button class="urgent" @click.stop="toggleUrgent" :class="{ fill: todo.urgent }">
-                        <FireIconFilled v-if="todo.urgent" />
-                        <FireIcon v-else />
-                        <span> Urgent </span>
-                    </button>
-                    <button class="archived" @click.stop="toggleArchived" :class="{ fill: todo.archived }">
-                        <ArchiveIconFilled v-if="todo.archived" />
-                        <ArchiveIcon v-else />
-                        <span> Archive </span>
-                    </button>
-                    <button class="color" @click.stop="openColorPallete" :style="{ '--backgroundColor': todo.color }">
-                        <ColorPalleteIcon />
-                        <span> Change Color </span>
-                    </button>
-                    <div class="colorPallete" v-if="showColorPallete" @click.stop>
-                        <nimoColorPicker v-model="todo.color" />
-                    </div>
-
-                    <div class="divider">
-                        <span>modify</span>
-                        <div class="horizontalLine"></div>
-                    </div>
-
-                    <button class="toggleProgress" @click.stop="toggleProgress">
-                        <PercentSymbolIcon />
-                        <span> {{ todo.progressVisable ? "Hide Progress" : "Show Progress" }} </span>
-                    </button>
-
-                    <button class="toggleCountdown" @click.stop="toggleCountdown">
-                        <ClockIcon />
-                        <span> {{ todo.countdownVisable ? "Hide Countdown" : "Show countdown" }} </span>
-                    </button>
-
-                    <button class="toggleBinaryProgress" @click.stop="toggleBinaryProgress">
-                        <GraphIcon />
-                        <span> {{ todo.progressBinary ? "Linear Progress" : "Binary Progress" }} </span>
-                    </button>
-
-                    <div class="honoraryButton" @click.stop>
-                        <ScaleIcon />
-                        <input @click.stop type="number" v-model="todo.weight" />
-                    </div>
-
-
-                    <div class="divider">
-                        <span>delete</span>
-                        <div class="horizontalLine"></div>
-                    </div>
-
-                    <button class="clear" @click.stop="clearToDoList">
-
-                        <TrashcanIcon />
-                        <span> Clear ToDoList </span>
-                    </button>
-
-                    <button class="delete" @click.stop="deleteToDo">
-                        <CancelIcon />
-                        <span> Delete List </span>
-                    </button>
+            <div class="progressBar" v-if="this.todo.progressVisable">
+                <div class="progress" :class="{ zero: toDoDone === 0 || toDoCount === 0 }"
+                    :style="{ width: progressPercentage }">
+                    <span :style="{ color: contrastColor }"> {{ progressPercentage || "empty" }} </span>
                 </div>
             </div>
+
+            <Draggable class="draggables" v-model="todo.todos" item-key="id" group="todos" handle=".dragHandle"
+                :animation="200" :ghost-class="'drag-ghost'"
+                :filter="'.menu, .colorPallete, input, button, .v3-emoji-picker'" :prevent-on-filter="false">
+                <template #item="{ element, index }">
+                    <component :is="element.component" v-model="todo.todos[index]" @deleteToDo="deleteElement(index)"
+                        :parentColor="todo.color ? todo.color : parentColor" />
+                </template>
+            </Draggable>
         </div>
-        <div class="countdownContainer" v-if="todo.countdownVisable">
-            <div class="countdownBar">
-                <div class="progress" :class="countdownClass" :style="{ width: countdownPercentage }">
-                    <span class="countdownCountdown"> {{ countdownCountdown }} </span>
-                    <span class="countdownPercentage"> {{ countdownPercentage }} </span>
-                </div>
-            </div>
-            <div class="dateStart">
-                <input type="datetime-local" v-model="todo.dateStart">
-            </div>
-            <div class="dateEnd">
-                <input type="datetime-local" v-model="todo.dateEnd">
-            </div>
-        </div>
-
-        <div class="progressBar" v-if="this.todo.progressVisable">
-            <div class="progress" :class="{ zero: toDoDone === 0 || toDoCount === 0 }"
-                :style="{ width: progressPercentage }">
-                <span> {{ progressPercentage || "empty" }} </span>
-            </div>
-        </div>
-
-        <component v-for="(todoItem, index) in notArchivedTodos" :key="todoItem.id" :is="todoItem.component"
-            v-model="notArchivedTodos[index]" @deleteToDo="deleteElement(index)"
-            :parentColor="todo.color ? todo.color : parentColor" 
-            />
     </div>
 </template>
 
@@ -146,25 +155,12 @@ import checkBoxToDo from '@/assets/components/checkBoxToDo.vue';
 import barToDo from '@/assets/components/barToDo.vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
-import CheckBoxToDoIcon from '../svg/CheckBoxToDoIcon.vue';
-import BarToDoIcon from '../svg/BarToDoIcon.vue';
-import ListToDoIcon from '../svg/ListToDoIcon.vue';
-import ClockIcon from '../svg/ClockIcon.vue';
-import PercentSymbolIcon from '../svg/PercentSymbolIcon.vue';
-import GraphIcon from '../svg/GraphIcon.vue';
-import ScaleIcon from '../svg/ScaleIcon.vue';
-import TrashcanIcon from '../svg/TrashcanIcon.vue';
-import CancelIcon from '../svg/CancelIcon.vue';
-import StarIcon from '../svg/StarIcon.vue';
-import StarIconFilled from '../svg/StarIconFilled.vue';
-import FireIcon from '../svg/FireIcon.vue';
-import FireIconFilled from '../svg/FireIconFilled.vue';
-import ColorPalleteIcon from '../svg/ColorPalleteIcon.vue';
 import nimoColorPicker from '@/assets/components/nimoColorPicker.vue';
-import ArchiveIconFilled from '../svg/archiveIconFilled.vue';
-import ArchiveIcon from '../svg/archiveIcon.vue';
 
 import { showArchived } from '@/assets/js/globalStorage.js';
+import Draggable from 'vuedraggable';
+
+import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
 
 
 export default {
@@ -175,23 +171,9 @@ export default {
         barToDo,
         toDoList: () => import('@/assets/components/toDoList.vue'),
 
-        CheckBoxToDoIcon,
-        BarToDoIcon,
-        ListToDoIcon,
-        PercentSymbolIcon,
-        ClockIcon,
-        GraphIcon,
-        ScaleIcon,
-        TrashcanIcon,
-        CancelIcon,
-        StarIcon,
-        StarIconFilled,
-        FireIcon,
-        FireIconFilled,
-        ColorPalleteIcon,
         nimoColorPicker,
-        ArchiveIconFilled,
-        ArchiveIcon,
+
+        Draggable,
     },
     data() {
         return {
@@ -433,7 +415,7 @@ export default {
         },
         generateUniqueId() {
             return Math.random().toString(36).substr(2, 9);
-        },  
+        },
     },
     mounted() {
         this.updateProgress();
@@ -486,6 +468,11 @@ export default {
         anyMedal() {
             return this.todo.star || this.todo.urgent || this.todo.archived;
         },
+        contrastColor() {
+            let color = this.todo.color ? this.todo.color : this.parentColor;
+            let result = contrastColorFromRgbLike(color);
+            return result;
+        },
     }
 
 
@@ -495,20 +482,44 @@ export default {
 <style scoped>
 @import url(@/assets/css/menu.css);
 
+
+
 .toDo {
     width: min-content;
 
-    padding: 1rem;
     border-radius: 1rem;
+    display: flex;
+    flex-direction: row;
+
+    background-color: #1e1f24;
+    border: 1px solid color-mix(in srgb, var(--color, #60616a), #60616a 50%);
+
+    --lightTextColor: #eee;
+    --darkTextColor: #222;
+}
+
+.toDo > .content {
+    flex-grow: 1;
+    padding: 1rem;
+    width: min-content;
+
     display: flex;
     flex-direction: column;
     gap: 1rem;
 
-    background-color: #1e1f24;
-    border: 1px solid color-mix(in srgb, var(--color, #60616a), #60616a 50%);
 }
 
-.toDo>.toDo {
+.draggables {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.toDo .draggables > * {
+    width: calc(100% + 0.75rem);
+    margin-left: -0.75rem;
+}
+.toDo .draggables > .toDo {
     width: calc(100% + 1.5rem);
     margin-left: -0.75rem;
     margin-right: -0.75rem;
@@ -591,7 +602,7 @@ export default {
     position: relative;
 }
 
-.hasCountdown>.progressBar {
+.hasCountdown>.content>.progressBar {
     border-radius: 0.0625rem 0.0625rem 0.375rem 0.375rem;
 }
 
@@ -610,7 +621,7 @@ export default {
     position: relative;
 }
 
-.hasCountdown>.progressBar>.progress {
+.hasCountdown>.content>.progressBar>.progress {
     border-radius: 0.0625rem 0.125rem 0.125rem 0.0625rem;
 }
 
@@ -643,7 +654,7 @@ export default {
     grid-template-areas: "dateStart dateEnd" "progress progress";
 }
 
-.hasProgress>.countdownContainer {
+.hasProgress>.content>.countdownContainer {
     margin-bottom: -0.9375rem;
 }
 
@@ -663,7 +674,7 @@ export default {
 
 }
 
-.hasProgress>.countdownContainer>.countdownBar {
+.hasProgress>.content>.countdownContainer>.countdownBar {
     border-radius: 0;
 }
 
@@ -682,7 +693,7 @@ export default {
     position: relative;
 }
 
-.hasProgress>.countdownContainer>.countdownBar>.progress {
+.hasProgress>.content>.countdownContainer>.countdownBar>.progress {
     border-radius: 0.0625rem 0.125rem 0.125rem 0.0625rem;
 }
 
@@ -732,7 +743,7 @@ export default {
 
 
 .countdownContainer .progress .countdownCountdown {
-    color: #fff;
+    color: var(--textColor);
 }
 
 .countdownContainer:hover .progress .countdownCountdown {
@@ -744,7 +755,7 @@ export default {
 }
 
 .countdownContainer:hover .progress .countdownPercentage {
-    color: #fff;
+    color: var(--textColor);
 }
 
 .countdownContainer .dateStart {
@@ -814,12 +825,16 @@ export default {
     left: -1.5rem;
 }
 
-*:has(.starMedal) > .urgentMedal {
+*:has(.starMedal)>.urgentMedal {
     top: 1rem;
 }
-*:has(.urgentMedal) > .starMedal {
+
+*:has(.urgentMedal)>.starMedal {
     top: 0rem;
 }
 
+.medals {
+    left: -1.75rem
+}
 
 </style>

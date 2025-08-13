@@ -347,7 +347,6 @@ export default {
             this.saturation = 1
             this.brightness = 1
             this.hexInput = null
-            this.modelValue = null
         },
     },
     mounted() {

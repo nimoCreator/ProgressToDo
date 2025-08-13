@@ -12,27 +12,26 @@
             } : {}
         )
     }" :id="todo.id">
-
+        <span class="dragHandle" title="Drag list"></span>
         <div class="medals" v-if="anyMedal">
             <div v-if="todo.star" class="medal starMedal">
-                <StarIconFilled />
+                <span class="material-symbols-rounded icon fill">star</span>
             </div>
             <div v-if="todo.urgent" class="medal urgentMedal">
-                <FireIconFilled />
+                <span class="material-symbols-rounded icon fill">mode_heat</span>
             </div>
             <div v-if="todo.archived" class="medal archivedMedal">
-                <ArchiveIconFilled />
+                <span class="material-symbols-rounded icon fill">inventory_2</span>
             </div>
         </div>
-        <label  :class="{ done: todo.done }">
-            <input type="range" v-model="todo.done" min="0" max="1" step="0.01" />  
-            <div class="label"
-            :style="{ '--percentage': todo.done }">
+        <label :class="{ done: todo.done }">
+            <input type="range" v-model="todo.done" min="0" max="1" step="0.01" />
+            <div class="label" :style="{ '--percentage': todo.done, 'color': contrastColor }">
                 {{ Math.round(todo.done * 100) }}%
             </div>
         </label>
         <div class="menu" @click="toggleMenu">
-            <span> ... </span>
+            <span class="menuOpenButton"> ... </span>
             <div class="buttons" :class="{ show: showMenu }">
                 <div class="divider">
                     <span>modify</span>
@@ -44,7 +43,7 @@
                         @input="adjustWidth" />
                 </div>
                 <div class="honoraryButton" @click.stop>
-                    <ScaleIcon/>
+                    <span class="material-symbols-rounded icon">balance</span>
                     <input @click.stop type="number" v-model="todo.weight" />
                 </div>
 
@@ -52,24 +51,21 @@
                     <span>highlight</span>
                     <div class="horizontalLine"></div>
                 </div>
-                <button class="star" @click.stop="toggleStared" :class="{ fill : todo.star }">
-                    <StarIconFilled v-if="todo.star" />
-                    <StarIcon v-else/>
-                    <span> Star</span>
+                <button class="star" @click.stop="toggleStared" :class="{ fill: todo.star }">
+                    <span class="material-symbols-rounded icon" :class="{ fill: todo.star }">star</span>
+                    <span class="buttonLabel"> Star</span>
                 </button>
-                <button class="urgent" @click.stop="toggleUrgent" :class="{ fill : todo.urgent }">
-                    <FireIconFilled v-if="todo.urgent" />
-                    <FireIcon v-else/>
-                    <span> Urgent </span>
+                <button class="urgent" @click.stop="toggleUrgent" :class="{ fill: todo.urgent }">
+                    <span class="material-symbols-rounded icon" :class="{ fill: todo.urgent }">mode_heat</span>
+                    <span class="buttonLabel"> Urgent </span>
                 </button>
                 <button class="archived" @click.stop="toggleArchived" :class="{ fill: todo.archived }">
-                        <ArchiveIconFilled v-if="todo.archived" />
-                        <ArchiveIcon v-else />
-                        <span> Archive </span>
-                    </button>
+                    <span class="material-symbols-rounded icon" :class="{ fill: todo.archived }">inventory_2</span>
+                    <span class="buttonLabel"> Archive </span>
+                </button>
                 <button class="color" @click.stop="openColorPallete" :style="{ '--backgroundColor': todo.color }">
-                    <ColorPalleteIcon/>
-                    <span> Change Color </span>
+                    <span class="material-symbols-rounded icon">palette</span>
+                    <span class="buttonLabel"> Change Color </span>
                 </button>
                 <div class="colorPallete" v-if="showColorPallete" @click.stop>
                     <nimoColorPicker v-model="todo.color" />
@@ -80,8 +76,8 @@
                     <div class="horizontalLine"></div>
                 </div>
                 <button class="delete" @click.stop="deleteToDo">
-                    <DeleteIcon/>
-                    <span> Delete ToDo </span>
+                    <span class="material-symbols-rounded icon">delete</span>
+                    <span class="buttonLabel"> Delete ToDo </span>
                 </button>
             </div>
         </div>
@@ -89,36 +85,20 @@
 </template>
 
 <script>
-import NameIcon from "@/assets/svg/NameIcon.vue";
-import DeleteIcon from "@/assets/svg/DeleteIcon.vue";
-import ScaleIcon from "@/assets/svg/ScaleIcon.vue";
-import StarIcon from "@/assets/svg/StarIcon.vue";
-import StarIconFilled from "../svg/StarIconFilled.vue";
-import FireIcon from "@/assets/svg/FireIcon.vue";
-import FireIconFilled from "../svg/FireIconFilled.vue";
-import ColorPalleteIcon from "@/assets/svg/ColorPalleteIcon.vue";
-import nimoColorPicker from "@/assets/components/nimoColorPicker.vue";
-import ArchiveIconFilled from "@/assets/svg/ArchiveIconFilled.vue";
-import ArchiveIcon from "@/assets/svg/ArchiveIcon.vue";
+
+import NameIcon from '../svg/NameIcon.vue';
+import nimoColorPicker from './nimoColorPicker.vue';
+import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
 
 export default {
     name: 'barToDo',
     components: {
         NameIcon,
-        DeleteIcon,
-        ScaleIcon,
-        StarIcon,
-        StarIconFilled,
-        FireIcon,
-        FireIconFilled,
-        ColorPalleteIcon,
         nimoColorPicker,
-        ArchiveIconFilled,
-        ArchiveIcon,
     },
     data() {
         return {
-            showMenu: false,            
+            showMenu: false,
             showColorPallete: false,
             textWidth: 1,
         }
@@ -142,6 +122,11 @@ export default {
         anyMedal() {
             return this.todo.star || this.todo.urgent || this.todo.archived;
         },
+        contrastColor() {
+            let color = this.todo.color ? this.todo.color : this.parentColor;
+            let result = contrastColorFromRgbLike(color);
+            return result;
+        }
     },
     methods: {
         deleteToDo() {
@@ -156,7 +141,7 @@ export default {
             if (this.$el.contains(event.target) && event.target.closest('.colorPallete')) {
                 return;
             }
-            
+
             // Otherwise proceed with normal outside click handling
             if (!this.$el.contains(event.target)) {
                 this.showMenu = false;
@@ -176,7 +161,7 @@ export default {
             this.todo.archived = !this.todo.archived;
         },
         openColorPallete(event) {
-            event.stopPropagation(); 
+            event.stopPropagation();
             this.showColorPallete = !this.showColorPallete;
         },
         changeColor(color) {
@@ -201,13 +186,28 @@ export default {
     display: flex;
     align-items: center;
     flex-direction: row;
-    gap: 1rem;
+    gap: 0.5rem;
     width: 100%;
     flex-grow: 1;
 
-    height: 2rem;
+    max-height: 3rem;
 
     position: relative;
+
+    --lightTextColor: #eee;
+    --darkTextColor: #222;
+}
+
+.barToDo>.content {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+
+    align-items: center;
+    flex-grow: 1;
+    position: relative;
+
+    height: 100%;
 }
 
 label {
@@ -227,9 +227,11 @@ input {
 .label {
     opacity: 0;
 }
+
 label:hover .label {
     opacity: 1;
 }
+
 .label {
     display: flex;
     align-items: center;
@@ -245,7 +247,7 @@ label:hover .label {
     border-radius: 0.5rem;
     width: 2.25rem;
 
-    left: calc(0.5rem + ( (100% - 1rem) * var(--percentage, 0.5) ));
+    left: calc(0.5rem + ((100% - 1rem) * var(--percentage, 0.5)));
     transform: translateX(-50%);
 
     z-index: 5;
@@ -255,6 +257,7 @@ label:hover .label {
     user-select: none;
     pointer-events: none;
 }
+
 .label:before {
     content: '';
     position: absolute;
@@ -265,16 +268,7 @@ label:hover .label {
 
     bottom: 0.875rem;
 }
-
-
-
-
 .medals {
-    position: absolute;
-    left: -0.5rem;
+    left: -1rem
 }
-.barToDo:has(.medals) {
-    padding-left: 1.5rem;
-}
-
 </style>

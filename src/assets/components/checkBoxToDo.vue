@@ -12,16 +12,17 @@
             } : {}
         )
     }" :id="todo.id">
+        <span class="dragHandle" title="Drag list"></span>
 
         <div class="medals" v-if="anyMedal">
             <div v-if="todo.star" class="medal starMedal">
-                <StarIconFilled />
+                <span class="material-symbols-rounded icon fill">star</span>
             </div>
             <div v-if="todo.urgent" class="medal urgentMedal">
-                <FireIconFilled />
+                <span class="material-symbols-rounded icon fill">mode_heat</span>
             </div>
             <div v-if="todo.archived" class="medal archivedMedal">
-                <ArchiveIconFilled />
+                <span class="material-symbols-rounded icon fill">inventory_2</span>
             </div>
         </div>
 
@@ -42,7 +43,7 @@
             <input type="text" v-model="todo.text">
         </div>
         <div class="menu" @click="toggleMenu">
-            <span> ... </span>
+            <span class="menuOpenButton"> ... </span>
             <div class="buttons" :class="{ show: showMenu }">
 
                 <div class="divider">
@@ -51,7 +52,7 @@
                 </div>
 
                 <div class="honoraryButton">
-                    <ScaleIcon />
+                    <span class="material-symbols-rounded icon">balance</span>
                     <input type="number" v-model="todo.weight" />
                 </div>
 
@@ -61,23 +62,20 @@
                 </div>
                 <button aria-label="Mark as Starred" class="star" @click.stop="toggleStared"
                     :class="{ fill: todo.star }">
-                    <StarIconFilled v-if="todo.star" />
-                    <StarIcon v-else />
-                    <span> Star</span>
+                    <span class="material-symbols-rounded icon" :class="{ fill: todo.star }">star</span>
+                    <span class="buttonLabel"> Star</span>
                 </button>
                 <button class="urgent" @click.stop="toggleUrgent" :class="{ fill: todo.urgent }">
-                    <FireIconFilled v-if="todo.urgent" />
-                    <FireIcon v-else />
-                    <span> Urgent </span>
+                    <span class="material-symbols-rounded icon" :class="{ fill: todo.urgent }">mode_heat</span>
+                    <span class="buttonLabel"> Urgent </span>
                 </button>
                 <button class="archived" @click.stop="toggleArchived" :class="{ fill: todo.archived }">
-                    <ArchiveIconFilled v-if="todo.archived" />
-                    <ArchiveIcon v-else />
-                    <span> Archive </span>
+                    <span class="material-symbols-rounded icon" :class="{ fill: todo.archived }">inventory_2</span>
+                    <span class="buttonLabel"> Archive </span>
                 </button>
                 <button class="color" @click.stop="openColorPallete" :style="{ '--backgroundColor': todo.color }">
-                    <ColorPalleteIcon />
-                    <span> Change Color </span>
+                    <span class="material-symbols-rounded icon">color_lens</span>
+                    <span class="buttonLabel"> Change Color </span>
                 </button>
                 <div class="colorPallete" v-if="showColorPallete" @click.stop>
                     <nimoColorPicker v-model="todo.color" />
@@ -89,8 +87,8 @@
                 </div>
 
                 <button class="delete" @click="deleteToDo">
-                    <DeleteIcon />
-                    <span> Delete ToDo </span>
+                    <span class="material-symbols-rounded icon">delete</span>
+                    <span class="buttonLabel"> Delete ToDo </span>
                 </button>
 
             </div>
@@ -100,32 +98,13 @@
 
 <script scoped>
 
-import NameIcon from "@/assets/svg/NameIcon.vue";
-import DeleteIcon from "@/assets/svg/DeleteIcon.vue";
-import ScaleIcon from "@/assets/svg/ScaleIcon.vue";
-import StarIcon from "@/assets/svg/StarIcon.vue";
-import StarIconFilled from "../svg/StarIconFilled.vue";
-import FireIcon from "@/assets/svg/FireIcon.vue";
-import FireIconFilled from "../svg/FireIconFilled.vue";
 import ColorPalleteIcon from "@/assets/svg/ColorPalleteIcon.vue";
 import nimoColorPicker from "@/assets/components/nimoColorPicker.vue";
-import ArchiveIconFilled from "../svg/archiveIconFilled.vue";
-import ArchiveIcon from "../svg/archiveIcon.vue";
 
 export default {
     name: 'checkBoxToDo',
     components: {
-        NameIcon,
-        DeleteIcon,
-        ScaleIcon,
-        StarIcon,
-        StarIconFilled,
-        FireIcon,
-        FireIconFilled,
-        ColorPalleteIcon,
         nimoColorPicker,
-        ArchiveIconFilled,
-        ArchiveIcon,
     },
     data() {
         return {
@@ -216,6 +195,7 @@ export default {
 
 <style scoped>
 @import url(@/assets/css/menu.css);
+
 
 .checkBoxToDo {
     display: flex;
@@ -385,14 +365,9 @@ export default {
     visibility: hidden;
 }
 
-
-
 .medals {
-    position: absolute;
-    left: -0.5rem;
+    left: -1rem
 }
-.checkBoxToDo:has(.medals) {
-    padding-left: 1.5rem;
-}
+
 
 </style>

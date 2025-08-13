@@ -1,7 +1,7 @@
 <template>
   <div id="appWrapper">
     <div id="menu" class="menu" @click="toggleMenu">
-      <span> ... </span>
+      <span class="menuOpenButton"> ... </span>
       <div class="buttons" :class="{ show: showMenu }" @click.stop>
 
         <div class="divider">
@@ -10,19 +10,23 @@
         </div>
 
         <button class="star" @click.stop="openStarModal">
-          <StarIconFilled />
-          <span> Show Starred </span>
+          <span class="material-symbols-rounded icon fill">star</span>
+          <span class="buttonLabel"> Show Starred </span>
         </button>
 
         <button class="urgent" @click.stop="openUrgentModal">
-          <FireIconFilled />
-          <span> Show Urgent </span>
+          <span class="material-symbols-rounded icon fill">mode_heat</span>
+          <span class="buttonLabel"> Show Urgent </span>
         </button>
 
         <button class="archived" @click.stop="toggleShowArchived" :class="{ fill: showArchived }">
-          <ArchiveIconFilled v-if="showArchived" />
-          <ArchiveIcon v-else />
-          <span> {{ showArchived ? "Hide" : "Show" }} Archived </span>
+          <span class="material-symbols-rounded icon" :class="{ fill: showArchived }">inventory_2</span>
+          <span class="buttonLabel"> {{ showArchived ? "Hide" : "Show" }} Archived </span>
+        </button>
+
+        <button class="done" @click.stop="toggleShowDone" :class="{ fill: showDone }">
+          <span class="material-symbols-rounded icon" :class="{ fill: showDone }">check_box</span>
+          <span class="buttonLabel"> {{ showDone ? "Hide" : "Show" }} Done </span>
         </button>
 
         <div class="divider">
@@ -31,18 +35,18 @@
         </div>
 
         <button @click.stop="copyAll">
-          <CopyIcon />
-          <span> Copy all to Clipboard</span>
+          <span class="material-symbols-rounded icon">content_copy</span>
+          <span class="buttonLabel"> Copy all to Clipboard</span>
         </button>
 
         <button @click.stop="pasteAll">
-          <PasteIcon />
-          <span> Paste all from Clipboard </span>
+          <span class="material-symbols-rounded icon">content_paste</span>
+          <span class="buttonLabel"> Paste all from Clipboard </span>
         </button>
 
         <button class="clear" @click.stop="clearLocalStorage">
-          <TrashcanIcon />
-          <span> Clear ToDoList </span>
+          <span class="material-symbols-rounded icon">delete</span>
+          <span class="buttonLabel"> Clear ToDoList </span>
         </button>
 
         <div class="divider">
@@ -52,28 +56,39 @@
 
         <button class="nimo" @click.stop="openNimoModal">
           <nimoIcon />
-          <span> About app, and author </span>
+          <span class="buttonLabel"> About app, and author </span>
         </button>
       </div>
     </div>
 
     <div id="gridPanel">
-      <toDoList v-for="(todo, index) in visibleTodos" :key="todo.id" v-model="visibleTodos[index]"
-        @deleteToDo="deleteToDo(index)" />
-        <div class="emptyState" v-if="visibleTodos.length === 0">
-          <p class="inlineTooltipBig">No todos found</p>
-          <p class="inlineTooltip">Click the plus icon below to add a new todo!</p>
-          <div class="flexRowOr"><hr/>or<hr/> </div>
-          <button>Click here to load the Demo!</button>
+
+      <BattlePass :doneCount="doneWeightedCount" :totalCount="totalWeightedCount" />
+
+      <Draggable v-model="todos" class="draggables" item-key="id" handle=".dragHandleList" :animation="200"
+        :ghost-class="'drag-ghost'">
+        <template #item="{ index }">
+          <toDoList :key="todos[index].id" v-model="todos[index]" @deleteToDo="deleteToDo(index)" />
+        </template>
+      </Draggable>
+
+      <div class="emptyState" v-if="visibleTodos.length === 0">
+        <p class="inlineTooltipBig">No todos found</p>
+        <p class="inlineTooltip">Click the plus icon below to add a new todo!</p>
+        <div class="flexRowOr">
+          <hr />or
+          <hr />
         </div>
+        <button @click="LoadDemo">Click here to load the Demo!</button>
+      </div>
       <button @click="addTodo" class="addTodo">
-        <plusIcon />
+        <span class="material-symbols-rounded icon fill">add</span>
       </button>
     </div>
 
     <div class="mainButtons">
       <button @click="scrollTop" class="scrollTop">
-        <ArrowUpIcon />
+        <span class="material-symbols-rounded icon fill">arrow_upward</span>
       </button>
     </div>
 
@@ -104,7 +119,7 @@
                 and productive in a complex network of independent and dependent tasks.</span>
               <span class="demo">Load a demo to get inspired how to use the app!</span>
               <button @click="LoadDemo" class="loadDemo">
-                <FolderIcon />
+                <span class="material-symbols-rounded icon fill">folder</span>
                 <span>Load Demo</span>
               </button>
             </p>
@@ -116,11 +131,11 @@
               <div class="nimoName">Sebastian <span style="color: #00aaff;">nimo</span> Legierski</div>
 
               <a href="https://nimoweb.ddns.net" class="nimoWebLink">
-                <GlobeIcon />
+                <span class="material-symbols-rounded icon fill">language</span>
                 Website
               </a>
               <a href="https://nimoweb.ddns.net/contact" class="nimoContact">
-                <EnvelopeIcon />
+                <span class="material-symbols-rounded icon fill">mail</span>
                 Contact
               </a>
               <div class="nimoBio">
@@ -133,10 +148,12 @@
 
         <div class="urgentModal" v-if="showUrgentModal">
           <div class="modalHeader">
-            <FireIconFilled />
+            <span class="material-symbols-rounded icon fill">mode_heat</span>
             <span>urgent</span>
             <div class="horizontalLine"></div>
-            <button class="closeModal" @click="closeModals">×</button>
+            <button class="closeModal" @click="closeModals">
+              <span class="material-symbols-rounded icon fill">close</span>
+            </button>
           </div>
           <div class="modalBody" v-if="flattenedUrgentTodos.length > 0">
             <div v-for="item in flattenedUrgentTodos" :key="item.id" class="modalItem urgent"
@@ -158,10 +175,12 @@
 
         <div class="starModal" v-if="showStarModal">
           <div class="modalHeader">
-            <StarIconFilled />
+            <span class="material-symbols-rounded icon fill">star</span>
             <span>starred</span>
             <div class="horizontalLine"></div>
-            <button class="closeModal" @click="closeModals">×</button>
+            <button class="closeModal" @click="closeModals">
+              <span class="material-symbols-rounded icon fill">close</span>
+            </button>
           </div>
           <div class="modalBody" v-if="flattenedStarredTodos.length > 0">
             <div v-for="item in flattenedStarredTodos" :key="item.id" class="modalItem starred"
@@ -188,53 +207,25 @@
 <script>
 
 import toDoList from "@/assets/components/toDoList.vue";
-import plusIcon from "@/assets/svg/PlusSymbolIcon.vue";
-import ArrowUpIcon from "@/assets/svg/ArrowUpIcon.vue";
-import CloudIcon from "@/assets/svg/CloudIcon.vue";
-import CloudDownloadIcon from "./assets/svg/CloudDownloadIcon.vue";
-import CloudUploadIcon from "./assets/svg/CloudUploadIcon.vue";
-import ArchiveStorageIcon from "./assets/svg/ArchiveStorageIcon.vue";
-import Favicon from './assets/svg/Favicon.vue';
-
-import TrashcanIcon from "@/assets/svg/TrashcanIcon.vue";
-import StarIconFilled from "./assets/svg/StarIconFilled.vue";
-import FireIconFilled from "./assets/svg/FireIconFilled.vue";
-import CopyIcon from "@/assets/svg/CopyIcon.vue";
-import PasteIcon from "@/assets/svg/PasteIcon.vue";
-import nimoIcon from "@/assets/svg/nimoIcon.vue";
 
 import { appVersion, releaseDate } from "./assets/js/consts";
-import GlobeIcon from "./assets/svg/GlobeIcon.vue";
-import EnvelopeIcon from "./assets/svg/envelopeIcon.vue";
-import FolderIcon from "./assets/svg/folderIcon.vue";
-
-import ArchiveIconFilled from "@/assets/svg/ArchiveIconFilled.vue";
-import ArchiveIcon from "@/assets/svg/ArchiveIcon.vue";
-
 import { showArchived } from '@/assets/js/globalStorage.js';
+import Favicon from "./assets/svg/Favicon.vue";
+import nimoIcon from "./assets/svg/nimoIcon.vue";
+import { templateTodos } from "./assets/js/consts.js";
+import BattlePass from "@/assets/components/BattlePass.vue";
+
+import Draggable from 'vuedraggable'
 
 export default {
   name: "App",
   components: {
     toDoList,
-    plusIcon,
-    ArrowUpIcon,
-    CloudIcon,
-    CloudDownloadIcon,
-    CloudUploadIcon,
-    ArchiveStorageIcon,
     Favicon,
-    TrashcanIcon,
-    StarIconFilled,
-    FireIconFilled,
-    CopyIcon,
-    PasteIcon,
     nimoIcon,
-    GlobeIcon,
-    EnvelopeIcon,
-    FolderIcon,
-    ArchiveIconFilled,
-    ArchiveIcon,
+    templateTodos,
+    Draggable,
+    BattlePass
   },
   setup() {
     return { showArchived };
@@ -246,9 +237,11 @@ export default {
       showNimoModal: false,
       showStarModal: false,
       showUrgentModal: false,
+      showDone: true,
 
       appVersion: appVersion,
       releaseDate: releaseDate,
+
     };
   },
   methods: {
@@ -330,6 +323,9 @@ export default {
     toggleShowArchived() {
       showArchived.value = !showArchived.value;
     },
+    toggleShowDone() {
+      this.showDone = !this.showDone;
+    },
     closeModals() {
       this.showNimoModal = false;
       this.showStarModal = false;
@@ -384,622 +380,13 @@ export default {
       });
       return flattened;
     },
-    TodayPlus(days) {
-      const today = new Date();
-      const targetDate = new Date(today.getTime() + days * 24 * 60 * 60 * 1000);
-      return targetDate.toISOString().slice(0, 16);
-    },
     LoadDemo() {
-      this.todos = [
-        {
-          "id": "jx4rmx1uo",
-          "type": "list",
-          "component": "toDoList",
-          "created": this.TodayPlus(0),
-          "modified": this.TodayPlus(0),
-          "emoji": "🛍️",
-          "name": "Groceries",
-          "todos": [
-            {
-              "id": "fqqfu0nfu",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Milk",
-              "done": true,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "color": null
-            },
-            {
-              "id": "2b5o558xy",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Bread",
-              "done": 0,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "color": null
-            },
-            {
-              "id": "emjq36o23",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Eggs",
-              "done": 0,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "color": null
-            },
-            {
-              "id": "32zyxpbtp",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Butter",
-              "done": true,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "color": null
-            },
-            {
-              "id": "tt2522idy",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Salt",
-              "done": false,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": true,
-              "color": null
-            },
-            {
-              "id": "uebbr79ul",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Sugar",
-              "done": true,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "archived": true,
-              "color": null
-            }
-          ],
-          "done": 0.4,
-          "weight": 1,
-          "progressBinary": false,
-          "progressVisable": false,
-          "countdownVisable": false,
-          "dateStart": this.TodayPlus(-1),
-          "dateEnd": this.TodayPlus(2),
-          "star": false,
-          "urgent": false,
-          "color": null
-        },
-        {
-          "id": "nwmyawhg5",
-          "type": "list",
-          "component": "toDoList",
-          "created": this.TodayPlus(0),
-          "modified": this.TodayPlus(0),
-          "emoji": "🏫",
-          "name": "Homework",
-          "todos": [
-            {
-              "id": "uz9icc7m5",
-              "type": "list",
-              "component": "toDoList",
-              "created": this.TodayPlus(0),
-              "modified": this.TodayPlus(0),
-              "emoji": "📚",
-              "name": "Math",
-              "todos": [
-                {
-                  "id": "bzesflecp",
-                  "type": "bar",
-                  "component": "barToDo",
-                  "text": "",
-                  "done": "0.64",
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "color": null
-                }
-              ],
-              "done": 0.64,
-              "weight": 1,
-              "progressBinary": false,
-              "progressVisable": true,
-              "countdownVisable": true,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "archived": false,
-              "color": "#adff00"
-            },
-            {
-              "id": "8sp6vf262",
-              "type": "list",
-              "component": "toDoList",
-              "created": this.TodayPlus(0),
-              "modified": this.TodayPlus(0),
-              "emoji": "⌛",
-              "name": "History Project",
-              "todos": [
-                {
-                  "id": "jopzra2a1",
-                  "type": "checkbox",
-                  "component": "checkBoxToDo",
-                  "text": "List all important dates",
-                  "done": true,
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "color": null
-                },
-                {
-                  "id": "p19mp9n5b",
-                  "type": "checkbox",
-                  "component": "checkBoxToDo",
-                  "text": "Research the Kings archeology tree",
-                  "done": 0,
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "color": null
-                },
-                {
-                  "id": "xo7gfw9yw",
-                  "type": "list",
-                  "component": "toDoList",
-                  "created": this.TodayPlus(0),
-                  "modified": this.TodayPlus(0),
-                  "emoji": "🎥",
-                  "name": "Presentation",
-                  "todos": [
-                    {
-                      "id": "rh1tg37t8",
-                      "type": "checkbox",
-                      "component": "checkBoxToDo",
-                      "text": "Add all informations to the slides",
-                      "done": true,
-                      "weight": 1,
-                      "dateStart": this.TodayPlus(-1),
-                      "dateEnd": this.TodayPlus(2),
-                      "star": false,
-                      "urgent": false,
-                      "color": null
-                    },
-                    {
-                      "id": "uz21wc9ai",
-                      "type": "checkbox",
-                      "component": "checkBoxToDo",
-                      "text": "Add images",
-                      "done": false,
-                      "weight": 1,
-                      "dateStart": this.TodayPlus(-1),
-                      "dateEnd": this.TodayPlus(2),
-                      "star": false,
-                      "urgent": false,
-                      "color": null
-                    },
-                    {
-                      "id": "0bjj3f23j",
-                      "type": "checkbox",
-                      "component": "checkBoxToDo",
-                      "text": "Add welcome and thank you slides",
-                      "done": true,
-                      "weight": 1,
-                      "dateStart": this.TodayPlus(-1),
-                      "dateEnd": this.TodayPlus(2),
-                      "star": false,
-                      "urgent": false,
-                      "color": null
-                    },
-                    {
-                      "id": "4fvefvl43",
-                      "type": "checkbox",
-                      "component": "checkBoxToDo",
-                      "text": "Add transitions",
-                      "done": false,
-                      "weight": 1,
-                      "dateStart": this.TodayPlus(-1),
-                      "dateEnd": this.TodayPlus(2),
-                      "star": false,
-                      "urgent": false,
-                      "color": null
-                    }
-                  ],
-                  "done": 0.5,
-                  "weight": 1,
-                  "progressBinary": false,
-                  "progressVisable": true,
-                  "countdownVisable": false,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "archived": false,
-                  "color": null
-                },
-                {
-                  "id": "8pxei6sv6",
-                  "type": "checkbox",
-                  "component": "checkBoxToDo",
-                  "text": "Get everything ready on USB drive",
-                  "done": false,
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "color": null
-                }
-              ],
-              "done": 0.25,
-              "weight": 1,
-              "progressBinary": true,
-              "progressVisable": true,
-              "countdownVisable": true,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": true,
-              "urgent": false,
-              "archived": false,
-              "color": "#ffb400"
-            },
-            {
-              "id": "s01qu1c5r",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Return books to school Library",
-              "done": true,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "color": null
-            }
-          ],
-          "done": 0.63,
-          "weight": 1,
-          "progressBinary": false,
-          "progressVisable": false,
-          "countdownVisable": false,
-          "dateStart": this.TodayPlus(-1),
-          "dateEnd": this.TodayPlus(2),
-          "star": false,
-          "urgent": false,
-          "color": null
-        },
-        {
-          "id": "axs838ki4",
-          "type": "list",
-          "component": "toDoList",
-          "created": this.TodayPlus(0),
-          "modified": this.TodayPlus(0),
-          "emoji": "🍀",
-          "name": "My garden",
-          "todos": [
-            {
-              "id": "u8gj2a7n0",
-              "type": "list",
-              "component": "toDoList",
-              "created": this.TodayPlus(0),
-              "modified": this.TodayPlus(0),
-              "emoji": "💧",
-              "name": "Water saplings",
-              "todos": [
-                {
-                  "id": "1tj2rirej",
-                  "type": "checkbox",
-                  "component": "checkBoxToDo",
-                  "text": "Water saplings",
-                  "done": false,
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "color": null
-                }
-              ],
-              "done": 0,
-              "weight": 1,
-              "progressBinary": false,
-              "progressVisable": false,
-              "countdownVisable": true,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": true,
-              "urgent": false,
-              "archived": false,
-              "color": "#00a8ff"
-            },
-            {
-              "id": "x73kc8jhk",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Plant new seeds",
-              "done": 0,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "color": null
-            },
-            {
-              "id": "uban3mrjp",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Fix the leaking pot",
-              "done": false,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "color": null
-            },
-            {
-              "id": "e8ahi62xj",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Spray for insects",
-              "done": 0,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": true,
-              "urgent": true,
-              "color": null
-            }
-          ],
-          "done": 0,
-          "weight": 1,
-          "progressBinary": false,
-          "progressVisable": false,
-          "countdownVisable": false,
-          "dateStart": this.TodayPlus(-1),
-          "dateEnd": this.TodayPlus(2),
-          "star": false,
-          "urgent": false,
-          "color": "#5dff00"
-        },
-        {
-          "id": "8gwnmoflo",
-          "type": "list",
-          "component": "toDoList",
-          "created": this.TodayPlus(0),
-          "modified": this.TodayPlus(0),
-          "emoji": "🎓",
-          "name": "Did you know?",
-          "todos": [
-            {
-              "id": "kphbnm4vt",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "You can also show archived todos",
-              "done": 0,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": true,
-              "urgent": false,
-              "archived": false,
-              "color": null
-            },
-            {
-              "id": "i4qokfgot",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "Check the menu in right-top corner",
-              "done": 0,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": true,
-              "archived": false,
-              "color": null
-            },
-            {
-              "id": "jnkzevbut",
-              "type": "checkbox",
-              "component": "checkBoxToDo",
-              "text": "See, this todo was archived, and now you can see it!",
-              "done": 0,
-              "weight": 1,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "archived": true,
-              "color": null
-            },
-            {
-              "id": "13zbwo9kc",
-              "type": "list",
-              "component": "toDoList",
-              "created": this.TodayPlus(0),
-              "modified": this.TodayPlus(0),
-              "emoji": "🎨",
-              "name": "You can color all your todos!",
-              "todos": [
-                {
-                  "id": "pkrx7g1jo",
-                  "type": "bar",
-                  "component": "barToDo",
-                  "text": "",
-                  "done": "0.2",
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "archived": false,
-                  "color": "#ff0c00"
-                },
-                {
-                  "id": "kqvxde1dx",
-                  "type": "bar",
-                  "component": "barToDo",
-                  "text": "",
-                  "done": "0.4",
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "archived": false,
-                  "color": "#ffb500"
-                },
-                {
-                  "id": "kfasya6df",
-                  "type": "bar",
-                  "component": "barToDo",
-                  "text": "",
-                  "done": "0.6",
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "archived": false,
-                  "color": "#18ff00"
-                },
-                {
-                  "id": "vfj7yun5c",
-                  "type": "bar",
-                  "component": "barToDo",
-                  "text": "",
-                  "done": "0.8",
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "archived": false,
-                  "color": "#00e8ff"
-                },
-                {
-                  "id": "2akayklna",
-                  "type": "bar",
-                  "component": "barToDo",
-                  "text": "",
-                  "done": "1",
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "archived": false,
-                  "color": "#000dff"
-                }
-              ],
-              "done": 0.6,
-              "weight": 1,
-              "progressBinary": false,
-              "progressVisable": false,
-              "countdownVisable": false,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "archived": true,
-              "color": null
-            },
-            {
-              "id": "2mthz1ckp",
-              "type": "list",
-              "component": "toDoList",
-              "created": this.TodayPlus(0),
-              "modified": this.TodayPlus(0),
-              "emoji": "🦝",
-              "name": "Thank you!",
-              "todos": [
-                {
-                  "id": "4wl8cncpq",
-                  "type": "checkbox",
-                  "component": "checkBoxToDo",
-                  "text": "Thanks for checking out my app!",
-                  "done": false,
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "archived": false,
-                  "color": null
-                },
-                {
-                  "id": "yv4rthd0i",
-                  "type": "checkbox",
-                  "component": "checkBoxToDo",
-                  "text": "Learn more about my projects in About section in menu in right top corner",
-                  "done": false,
-                  "weight": 1,
-                  "dateStart": this.TodayPlus(-1),
-                  "dateEnd": this.TodayPlus(2),
-                  "star": false,
-                  "urgent": false,
-                  "archived": false,
-                  "color": null
-                }
-              ],
-              "done": 0,
-              "weight": 1,
-              "progressBinary": false,
-              "progressVisable": false,
-              "countdownVisable": false,
-              "dateStart": this.TodayPlus(-1),
-              "dateEnd": this.TodayPlus(2),
-              "star": false,
-              "urgent": false,
-              "archived": false,
-              "color": "#00aaff"
-            }
-          ],
-          "done": 0.12,
-          "weight": 1,
-          "progressBinary": false,
-          "progressVisable": false,
-          "countdownVisable": false,
-          "dateStart": this.TodayPlus(-1),
-          "dateEnd": this.TodayPlus(2),
-          "star": false,
-          "urgent": false,
-          "archived": false,
-          "color": null
-        }
-      ]
+      this.todos = JSON.parse(JSON.stringify(templateTodos));
+      this.updateLocalStorage();
 
       this.closeModals()
-    }
+    },
+    clamp01(x) { return Math.max(0, Math.min(1, x)); },
   },
   created() {
     this.loadLocalStorage();
@@ -1026,8 +413,21 @@ export default {
       return this.flattenTodos(this.todos).filter(todo => todo.urgent);
     },
     visibleTodos() {
-      return this.todos.filter(todo => showArchived.value || !todo.archived);
+      // hide archived and done depending on showArchived and showDone
+      return this.todos.filter(todo => (this.showArchived || !todo.archived) && (this.showDone || todo.done < 1));
     },
+    doneWeightedCount() {
+      return this.flattenTodos(this.todos)
+        .reduce((acc, todo) => {
+          const w = Number.isFinite(+todo.weight) ? +todo.weight : 1;
+          const p = todo.done; 
+          return acc + w * p;
+        }, 0);
+    },
+    totalWeightedCount() {
+      return this.flattenTodos(this.todos)
+        .reduce((acc, todo) => acc + (Number.isFinite(+todo.weight) ? +todo.weight : 1), 0);
+    }
   },
   mounted() {
     document.addEventListener("click", this.handleClickOutside);
@@ -1042,6 +442,8 @@ export default {
 <style>
 @import url("@/assets/css/base.css");
 @import url("@/assets/css/menu.css");
+
+
 
 .addTodo {
   display: flex;
@@ -1078,6 +480,22 @@ export default {
   position: fixed;
   bottom: 1rem;
   right: 1rem;
+}
+
+.mainButtons>* {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.mainButtons .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #menu {
@@ -1121,7 +539,8 @@ export default {
   color: #00aaff;
 }
 
-#logo .signet svg {
+#logo .signet svg,
+#logo .signet .icon {
   aspect-ratio: 1 / 1;
 
   width: 100%;
@@ -1267,6 +686,8 @@ export default {
   text-align: center;
   color: #7c8187;
   background-color: #1e1f24;
+  border-radius: 0.5rem;
+  border: 1px solid #3c3e43;
 }
 
 
@@ -1350,12 +771,6 @@ export default {
 
 .nimoModal .modalHeader {
   padding: 0.75rem 1rem;
-}
-
-.nimoModal .modalHeader svg {
-  color: #00aaff;
-  width: 1.75rem;
-  height: 1.75rem;
 }
 
 
@@ -1499,9 +914,13 @@ export default {
   margin-left: 0.5rem;
 }
 
-.nimoModal .appDescription button svg {
-  width: 1.25rem;
-  height: 1.25rem;
+.nimoModal .appDescription button .icon {
+  width: 1rem;
+  height: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem;
 }
 
 .nimoModal .appDescription button:hover {
@@ -1593,12 +1012,6 @@ export default {
   grid-area: c;
 }
 
-.nimoWebLink svg,
-.nimoContact svg {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
 .nimoWebLink:hover,
 .nimoContact:hover {
   color: #ccc;
@@ -1636,10 +1049,14 @@ export default {
   margin-left: 0.5rem;
 }
 
-.nimoWebLink>svg,
-.nimoContact>svg {
+.nimoWebLink>.icon,
+.nimoContact>.icon {
   width: 1rem;
   height: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem;
 }
 
 .nimoWebLink>span,
@@ -1681,13 +1098,14 @@ export default {
 
   min-width: 25rem;
 }
+
 .emptyState .inlineTooltipBig {
   color: #7c8187;
   font-size: 1.5rem;
 }
-.emptyState .inlineTooltip {
 
-}
+/* .emptyState .inlineTooltip {} */
+
 .flexRowOr {
   display: flex;
   flex-direction: row;
@@ -1697,6 +1115,7 @@ export default {
 
   color: #7c8187;
 }
+
 .flexRowOr hr {
   flex-grow: 1;
   height: 0.0625rem;

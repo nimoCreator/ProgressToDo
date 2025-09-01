@@ -1,6 +1,6 @@
 <template>
     <div :class="{ toDo: true, hasCountdown: todo.countdownVisable, hasProgress: todo.progressVisable }"
-        :style="{ '--color': todo.color }" :id="todo.id">
+        :style="{ '--color': todo.color }" :id="todo.id" @contextmenu.stop.prevent.exact="toggleMenu">
         <span class="dragHandle dragHandleList" title="Drag list"></span>
 
         <div class="content">
@@ -19,7 +19,7 @@
 
                 <div class="emoji" @click="toggleEmojiPicker"> {{ todo.emoji || '📝' }} </div>
                 <emoji-picker @click.stop v-if="showEmojiPicker" @select="selectEmoji" theme="auto" />
-                <input type="text" class="toDoName" v-model="todo.name">
+                <input type="text" class="toDoName" v-model="todo.text">
                 <div class="menu" @click.stop="toggleMenu">
                     <span class="menuOpenButton"> ... </span>
                     <div class="buttons" :class="{ show: showMenu }">
@@ -142,8 +142,13 @@
                 :animation="200" :ghost-class="'drag-ghost'"
                 :filter="'.menu, .colorPallete, input, button, .v3-emoji-picker'" :prevent-on-filter="false">
                 <template #item="{ element, index }">
-                    <component :is="element.component" v-model="todo.todos[index]" @deleteToDo="deleteElement(index)"
-                        :parentColor="todo.color ? todo.color : parentColor" />
+                    <component
+                        v-if="isVisibleChild(element)"
+                        :is="element.component"
+                        v-model="todo.todos[index]"
+                        @deleteToDo="deleteElement(index)"
+                        :parentColor="todo.color ? todo.color : parentColor"
+                    />
                 </template>
             </Draggable>
         </div>
@@ -157,7 +162,7 @@ import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import nimoColorPicker from '@/assets/components/nimoColorPicker.vue';
 
-import { showArchived } from '@/assets/js/globalStorage.js';
+import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import Draggable from 'vuedraggable';
 
 import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
@@ -175,18 +180,24 @@ export default {
 
         Draggable,
     },
+    setup() {
+        const store = useTodosStore();
+        return { store };
+    },
     data() {
         return {
             showMenu: false,
             showEmojiPicker: false,
+            showColorPallete: false,
+
             toDoCount: 0,
             toDoDone: 0,
+
             progressPercentage: "0%",
             countdownCountdown: "0d 0h 0m 0s",
             countdownPercentage: "0%",
             countdownInterval: null,
             countdownClass: "",
-            showColorPallete: false,
         };
     },
     props: {
@@ -204,6 +215,9 @@ export default {
                 type: 'checkbox',
                 component: 'checkBoxToDo',
 
+                created: new Date(),
+                modified: new Date(),
+                emoji: '',
                 text: '',
                 done: 0,
                 weight: 1,
@@ -225,7 +239,10 @@ export default {
 
                 type: 'bar',
                 component: 'barToDo',
-
+                
+                created: new Date(),
+                modified: new Date(),
+                emoji: '',
                 text: '',
                 done: 0,
                 weight: 1,
@@ -250,7 +267,7 @@ export default {
                 created: new Date(),
                 modified: new Date(),
                 emoji: '📝',
-                name: '',
+                text: '',
                 todos: [],
                 done: 0,
                 weight: 1,
@@ -306,9 +323,17 @@ export default {
             event.stopPropagation();
             this.showColorPallete = !this.showColorPallete;
         },
+        handleEscape(e) {
+            if (e.key === 'Escape') {
+                this.showMenu = false;
+                this.showEmojiPicker = false;
+                this.showColorPallete = false;
+            }
+        },
         handleClickOutside(event) {
             if (this.$el && !this.$el.contains(event.target)) {
                 this.showMenu = false;
+                this.showEmojiPicker = false;
                 this.showColorPallete = false;
             }
         },
@@ -416,14 +441,24 @@ export default {
         generateUniqueId() {
             return Math.random().toString(36).substr(2, 9);
         },
+
+        isVisibleChild(t) {
+            const s = this.store?.settings ?? { showArchived:false, showDone:false };
+            const passArchived = s.showArchived || !t.archived;
+            const doneVal = Number.isFinite(+t.done) ? +t.done : 0;
+            const passDone = s.showDone || doneVal < 1;
+            return passArchived && passDone;
+        },
     },
     mounted() {
         this.updateProgress();
         this.updateCountdown();
         this.countdownInterval = setInterval(this.updateCountdown, 1000);
+        document.addEventListener('keydown', this.handleEscape);
         document.addEventListener('click', this.handleClickOutside);
     },
     beforeUnmount() {
+        document.removeEventListener('keydown', this.handleEscape);
         document.removeEventListener('click', this.handleClickOutside);
 
         clearInterval(this.countdownInterval);
@@ -460,10 +495,6 @@ export default {
             set(value) {
                 this.$emit('update:modelValue', value);
             }
-        },
-        notArchivedTodos() {
-            if (showArchived.value) return this.todo.todos;
-            return this.todo.todos.filter(todo => !todo.archived);
         },
         anyMedal() {
             return this.todo.star || this.todo.urgent || this.todo.archived;

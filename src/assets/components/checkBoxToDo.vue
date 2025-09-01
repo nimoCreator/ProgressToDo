@@ -1,5 +1,5 @@
 <template>
-    <div class="checkBoxToDo" :class="{ done: todo.done }" :style="{
+    <div class="checkBoxToDo" v-show="isVisible" :class="{ done: todo.done }" :style="{
         ...(
             todo.color ? {
                 '--color': todo.color,
@@ -11,7 +11,8 @@
                 '--colorA': parentColor + 'aa'
             } : {}
         )
-    }" :id="todo.id">
+    }" :id="todo.id"
+    @contextmenu.stop.prevent.exact="toggleMenu">
         <span class="dragHandle" title="Drag list"></span>
 
         <div class="medals" v-if="anyMedal">
@@ -98,13 +99,17 @@
 
 <script scoped>
 
-import ColorPalleteIcon from "@/assets/svg/ColorPalleteIcon.vue";
+import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import nimoColorPicker from "@/assets/components/nimoColorPicker.vue";
 
 export default {
     name: 'checkBoxToDo',
     components: {
         nimoColorPicker,
+    },
+    setup() {
+        const store = useTodosStore();
+        return { store };
     },
     data() {
         return {
@@ -134,6 +139,13 @@ export default {
         anyMedal() {
             return this.todo.star || this.todo.urgent || this.todo.archived;
         },
+        isVisible() {
+            const s = this.store.settings;
+            const passArchived = s.showArchived || !this.todo.archived;
+            const doneVal = Number.isFinite(+this.todo.done) ? +this.todo.done : (this.todo.done ? 1 : 0);
+            const passDone = s.showDone || doneVal < 1;
+            return passArchived && passDone;
+        },
     },
     methods: {
         deleteToDo() {
@@ -141,6 +153,12 @@ export default {
         },
         toggleMenu() {
             this.showMenu = !this.showMenu;
+        },
+        handleEscape(e) {
+            if (e.key === 'Escape') {
+                this.showMenu = false;
+                this.showColorPallete = false;
+            }
         },
         handleClickOutside(event) {
             const el = this.$el;
@@ -172,12 +190,6 @@ export default {
         toggleDone() {
             this.todo.done = !this.todo.done;
         },
-        handleEscape(e) {
-            if (e.key === 'Escape') {
-                this.showMenu = false;
-                this.showColorPallete = false;
-            }
-        }
 
     },
     mounted() {
@@ -186,6 +198,7 @@ export default {
 
     },
     beforeUnmount() {
+
         document.removeEventListener('click', this.handleClickOutside);
         document.removeEventListener('keydown', this.handleEscape);
 

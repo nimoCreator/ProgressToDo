@@ -1,5 +1,5 @@
-export let appVersion = 'v0.1.0';
-export let releaseDate = '2025-05-08';
+export let appVersion = 'v0.2.0';
+export let releaseDate = '2025-09-01';
 
 function TodayPlus(days) {
     const today = new Date();
@@ -15,7 +15,7 @@ export let templateTodos = [
         "created": TodayPlus(0),
         "modified": TodayPlus(0),
         "emoji": "🛍️",
-        "name": "Groceries",
+        "text": "Groceries",
         "todos": [
             {
                 "id": "fqqfu0nfu",
@@ -115,7 +115,7 @@ export let templateTodos = [
         "created": TodayPlus(0),
         "modified": TodayPlus(0),
         "emoji": "🏫",
-        "name": "Homework",
+        "text": "Homework",
         "todos": [
             {
                 "id": "uz9icc7m5",
@@ -124,7 +124,7 @@ export let templateTodos = [
                 "created": TodayPlus(0),
                 "modified": TodayPlus(0),
                 "emoji": "📚",
-                "name": "Math",
+                "text": "Math",
                 "todos": [
                     {
                         "id": "bzesflecp",
@@ -159,7 +159,7 @@ export let templateTodos = [
                 "created": TodayPlus(0),
                 "modified": TodayPlus(0),
                 "emoji": "⌛",
-                "name": "History Project",
+                "text": "History Project",
                 "todos": [
                     {
                         "id": "jopzra2a1",
@@ -194,7 +194,7 @@ export let templateTodos = [
                         "created": TodayPlus(0),
                         "modified": TodayPlus(0),
                         "emoji": "🎥",
-                        "name": "Presentation",
+                        "text": "Presentation",
                         "todos": [
                             {
                                 "id": "rh1tg37t8",
@@ -319,7 +319,7 @@ export let templateTodos = [
         "created": TodayPlus(0),
         "modified": TodayPlus(0),
         "emoji": "🍀",
-        "name": "My garden",
+        "text": "My garden",
         "todos": [
             {
                 "id": "u8gj2a7n0",
@@ -328,7 +328,7 @@ export let templateTodos = [
                 "created": TodayPlus(0),
                 "modified": TodayPlus(0),
                 "emoji": "💧",
-                "name": "Water saplings",
+                "text": "Water saplings",
                 "todos": [
                     {
                         "id": "1tj2rirej",
@@ -414,7 +414,7 @@ export let templateTodos = [
         "created": TodayPlus(0),
         "modified": TodayPlus(0),
         "emoji": "🎓",
-        "name": "Did you know?",
+        "text": "Did you know?",
         "todos": [
             {
                 "id": "kphbnm4vt",
@@ -465,7 +465,7 @@ export let templateTodos = [
                 "created": TodayPlus(0),
                 "modified": TodayPlus(0),
                 "emoji": "🎨",
-                "name": "You can color all your todos!",
+                "text": "You can color all your todos!",
                 "todos": [
                     {
                         "id": "pkrx7g1jo",
@@ -557,7 +557,7 @@ export let templateTodos = [
                 "created": TodayPlus(0),
                 "modified": TodayPlus(0),
                 "emoji": "🦝",
-                "name": "Thank you!",
+                "text": "Thank you!",
                 "todos": [
                     {
                         "id": "4wl8cncpq",

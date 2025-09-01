@@ -1,6 +1,6 @@
 <template>
-  <div id="appWrapper">
-    <div id="menu" class="menu" @click="toggleMenu">
+  <div id="appWrapper" @contextmenu.stop.prevent.exact="toggleMenu" @click="closeAllMenus">
+    <div id="menu" class="menu" @click.stop="toggleMenu">
       <span class="menuOpenButton"> ... </span>
       <div class="buttons" :class="{ show: showMenu }" @click.stop>
 
@@ -29,20 +29,35 @@
           <span class="buttonLabel"> {{ showDone ? "Hide" : "Show" }} Done </span>
         </button>
 
+        <button class="done" @click.stop="toggleBattlePass" :class="{ fill: showBattlePass }">
+          <span class="material-symbols-rounded icon" :class="{ fill: showBattlePass }">strategy</span>
+          <span class="buttonLabel"> {{ showBattlePass ? "Hide" : "Show" }} BattlePass </span>
+        </button>
+
         <div class="divider">
           <span>data</span>
           <div class="horizontalLine"></div>
         </div>
 
-        <button @click.stop="copyAll">
+        <!-- <button @click.stop="copyAllCSV">
           <span class="material-symbols-rounded icon">content_copy</span>
           <span class="buttonLabel"> Copy all to Clipboard</span>
         </button>
 
-        <button @click.stop="pasteAll">
+        <button @click.stop="pasteAllCSV">
           <span class="material-symbols-rounded icon">content_paste</span>
           <span class="buttonLabel"> Paste all from Clipboard </span>
+        </button> -->
+
+        <button @click.stop="saveAllCSVFile">
+          <span class="material-symbols-rounded icon">download</span>
+          <span class="buttonLabel"> Download CSV file </span>
         </button>
+        <button @click.stop="openCSVFileDialog">
+          <span class="material-symbols-rounded icon">upload</span>
+          <span class="buttonLabel"> Upload CSV file </span>
+        </button>
+        <input ref="csvInput" type="file" accept=".csv,text/csv" style="display:none" @change="onCSVFileSelected" />
 
         <button class="clear" @click.stop="clearLocalStorage">
           <span class="material-symbols-rounded icon">delete</span>
@@ -63,9 +78,9 @@
 
     <div id="gridPanel">
 
-      <BattlePass :doneCount="doneWeightedCount" :totalCount="totalWeightedCount" />
+      <BattlePass :doneCount="doneWeightedCount" :totalCount="totalWeightedCount" v-if="showBattlePass" />
 
-      <Draggable v-model="todos" class="draggables" item-key="id" handle=".dragHandleList" :animation="200"
+      <Draggable v-model="visibleTodos" class="draggables" item-key="id" handle=".dragHandleList" :animation="200"
         :ghost-class="'drag-ghost'">
         <template #item="{ index }">
           <toDoList :key="todos[index].id" v-model="todos[index]" @deleteToDo="deleteToDo(index)" />
@@ -92,15 +107,14 @@
       </button>
     </div>
 
-    <div id="modals" v-if="showModals" @click="closeModals">
-
+    <div id="modals" v-if="showModals" @click="closeAllModals">
       <div class="modalContent" @click.stop>
         <div class="nimoModal" v-if="showNimoModal">
           <div class="modalHeader">
             <nimoIcon />
             <span>About</span>
             <div class="horizontalLine"></div>
-            <button class="closeModal" @click="closeModals">×</button>
+            <button class="closeModal" @click="closeAllModals">×</button>
           </div>
           <div class="modalBody">
             <div id="logo">
@@ -151,7 +165,7 @@
             <span class="material-symbols-rounded icon fill">mode_heat</span>
             <span>urgent</span>
             <div class="horizontalLine"></div>
-            <button class="closeModal" @click="closeModals">
+            <button class="closeModal" @click="closeAllModals">
               <span class="material-symbols-rounded icon fill">close</span>
             </button>
           </div>
@@ -160,7 +174,7 @@
               @click="scrollToItem(item.id)">
               <div class="itemContent">
                 <strong v-if="item.text">{{ item.text }}</strong>
-                <strong v-else>{{ item.name || 'Untitled Task' }}</strong>
+                <strong v-else>{{ item.text || 'Untitled Task' }}</strong>
                 <div class="itemPath" v-if="item.parentName">
                   <span>In: {{ item.parentName }}</span>
                 </div>
@@ -178,7 +192,7 @@
             <span class="material-symbols-rounded icon fill">star</span>
             <span>starred</span>
             <div class="horizontalLine"></div>
-            <button class="closeModal" @click="closeModals">
+            <button class="closeModal" @click="closeAllModals">
               <span class="material-symbols-rounded icon fill">close</span>
             </button>
           </div>
@@ -187,7 +201,7 @@
               @click="scrollToItem(item.id)">
               <div class="itemContent">
                 <strong v-if="item.text">{{ item.text }}</strong>
-                <strong v-else>{{ item.name || 'Untitled Task' }}</strong>
+                <strong v-else>{{ item.text || 'Untitled Task' }}</strong>
                 <div class="itemPath" v-if="item.parentName">
                   <span>In: {{ item.parentName }}</span>
                 </div>
@@ -206,10 +220,10 @@
 
 <script>
 
+import { useTodosStore, installTodosPersistence } from '@/assets/stores/globalStorage.js';
 import toDoList from "@/assets/components/toDoList.vue";
 
 import { appVersion, releaseDate } from "./assets/js/consts";
-import { showArchived } from '@/assets/js/globalStorage.js';
 import Favicon from "./assets/svg/Favicon.vue";
 import nimoIcon from "./assets/svg/nimoIcon.vue";
 import { templateTodos } from "./assets/js/consts.js";
@@ -228,16 +242,17 @@ export default {
     BattlePass
   },
   setup() {
-    return { showArchived };
+    const store = useTodosStore();
+    installTodosPersistence(store);
+    store.initFromStorage();
+    return { store };
   },
   data() {
     return {
-      todos: [],
       showMenu: false,
       showNimoModal: false,
       showStarModal: false,
       showUrgentModal: false,
-      showDone: true,
 
       appVersion: appVersion,
       releaseDate: releaseDate,
@@ -246,7 +261,7 @@ export default {
   },
   methods: {
     addTodo() {
-      this.todos.push({
+      this.store.addTodo({
         id: this.generateUniqueId(),
 
         type: 'list',
@@ -255,7 +270,7 @@ export default {
         created: new Date().toISOString().slice(0, 16),
         modified: new Date().toISOString().slice(0, 16),
         emoji: '📝',
-        name: '',
+        text: '',
         todos: [],
         done: 0,
         weight: 1,
@@ -274,24 +289,23 @@ export default {
       });
       this.updateLocalStorage();
     },
-    updateLocalStorage() {
-      localStorage.setItem("todos", JSON.stringify(this.todos));
-    },
-    loadLocalStorage() {
-      this.todos = JSON.parse(localStorage.getItem("todos")) || [];
-    },
+
+    /* #region LOCAL STORAGE */
+
     deleteToDo(index) {
-      this.todos.splice(index, 1);
-      this.updateLocalStorage();
+      this.store.deleteToDo(index);
     },
     clearLocalStorage() {
       if (confirm("Are you sure you want to delete all your todos?")) {
-        localStorage.removeItem("todos");
-        this.todos = [];
+        this.store.clearAll();
+        this.store.persistNow();
       }
     },
+
+    /* #endregion LOCAL STORAGE */
+
     scrollTop() {
-      document.getElementById("gridPanel").scrollTo({
+      document.querySelector("html").scrollTo({
         top: 0,
         behavior: "smooth",
       });
@@ -299,11 +313,15 @@ export default {
     toggleMenu() {
       this.showMenu = !this.showMenu;
     },
+    closeAllMenus() {
+      this.showMenu = false;
+      this.closeAllModals();
+    },
     generateUniqueId() {
       return Math.random().toString(36).substr(2, 9);
     },
     copyAll() {
-      const todosString = JSON.stringify(this.todos, null, 2);
+      const todosString = JSON.stringify(this.store.todos, null, 2);
       navigator.clipboard.writeText(todosString).then(() => {
         alert("Todos copied to clipboard!");
       });
@@ -312,8 +330,8 @@ export default {
       navigator.clipboard.readText().then((text) => {
         try {
           const parsedTodos = JSON.parse(text);
-          this.todos = parsedTodos;
-          this.updateLocalStorage();
+          this.store.todos = parsedTodos;
+          this.store.persistNow();
           alert("Todos pasted from clipboard!");
         } catch (error) {
           alert("Failed to parse todos from clipboard.");
@@ -321,27 +339,35 @@ export default {
       });
     },
     toggleShowArchived() {
-      showArchived.value = !showArchived.value;
+      this.store.toggleShowArchived();
     },
     toggleShowDone() {
-      this.showDone = !this.showDone;
+      this.store.toggleShowDone();
     },
-    closeModals() {
+    toggleBattlePass() {
+      this.store.toggleBattlePass();
+    },
+    closeAllModals() {
       this.showNimoModal = false;
       this.showStarModal = false;
       this.showUrgentModal = false;
     },
     openStarModal() {
-      this.closeModals();
+      this.closeAllModals();
       this.showStarModal = !this.showStarModal;
     },
     openUrgentModal() {
-      this.closeModals();
+      this.closeAllModals();
       this.showUrgentModal = !this.showUrgentModal;
     },
     openNimoModal() {
-      this.closeModals();
+      this.closeAllModals();
       this.showNimoModal = !this.showNimoModal;
+    },
+    handleEscape(e) {
+      if (e.key === 'Escape') {
+        this.showMenu = false;
+      }
     },
     handleClickOutside(event) {
       if (!this.$el.contains(event.target)) {
@@ -360,7 +386,7 @@ export default {
           setTimeout(() => {
             element.classList.remove('highlight-item');
           }, 2000);
-          this.closeModals();
+          this.closeAllModals();
         }
       });
     },
@@ -368,8 +394,8 @@ export default {
       let flattened = [];
       todos.forEach(todo => {
         const todoWithParent = { ...todo };
-        if (parent && parent.name) {
-          todoWithParent.parentName = parent.name;
+        if (parent && parent.text) {
+          todoWithParent.parentName = parent.text;
         }
 
         flattened.push(todoWithParent);
@@ -381,58 +407,288 @@ export default {
       return flattened;
     },
     LoadDemo() {
-      this.todos = JSON.parse(JSON.stringify(templateTodos));
-      this.updateLocalStorage();
+      this.store.todos = JSON.parse(JSON.stringify(templateTodos));
+      this.store.persistNow();
 
-      this.closeModals()
+      this.closeAllModals()
     },
     clamp01(x) { return Math.max(0, Math.min(1, x)); },
-  },
-  created() {
-    this.loadLocalStorage();
+
+    /* #region CSV */
+
+    csvEscape(v) {
+      if (v === null || v === undefined) return '';
+      const s = String(v);
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    },
+    csvUnescape(s) {
+      if (s.startsWith('"') && s.endsWith('"')) {
+        return s.slice(1, -1).replace(/""/g, '"');
+      }
+      return s;
+    },
+    parseCSV(text) {
+      const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.length);
+      if (lines.length === 0) return { headers: [], rows: [] };
+      const parseLine = (line) => {
+        const out = []; let cur = ''; let q = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (q) {
+            if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+            else if (ch === '"') { q = false; }
+            else { cur += ch; }
+          } else {
+            if (ch === ',') { out.push(cur); cur = ''; }
+            else if (ch === '"') { q = true; }
+            else { cur += ch; }
+          }
+        }
+        out.push(cur);
+        return out;
+      };
+      const headers = parseLine(lines[0]);
+      const rows = lines.slice(1).map(l => {
+        const cols = parseLine(l);
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = this.csvUnescape(cols[i] ?? ''));
+        return obj;
+      });
+      return { headers, rows };
+    },
+
+    // ---------- Flatten (export) ----------
+    flattenTodosForCSV(todos) {
+      const rows = [];
+      const dfs = (arr, parentId = '') => {
+        arr.forEach((t, idx) => {
+          rows.push({
+            id: t.id || this.generateUniqueId(),
+            parentId,
+            order: idx,
+            type: t.type ?? '',
+            component: t.component ?? '',
+            text: t.text ?? '',
+            done: Number.isFinite(+t.done) ? +t.done : (t.done ? 1 : 0),
+            weight: Number.isFinite(+t.weight) ? +t.weight : 1,
+            emoji: t.emoji ?? '',
+            created: t.created ?? '',
+            modified: t.modified ?? '',
+            dateStart: t.dateStart ?? '',
+            dateEnd: t.dateEnd ?? '',
+            star: t.star ? 1 : 0,
+            urgent: t.urgent ? 1 : 0,
+            archived: t.archived ? 1 : 0,
+            color: t.color ?? '',
+            progressBinary: t.progressBinary ? 1 : 0,
+            progressVisable: t.progressVisable ? 1 : 0,
+            countdownVisable: t.countdownVisable ? 1 : 0,
+          });
+          if (Array.isArray(t.todos) && t.todos.length) dfs(t.todos, t.id);
+        });
+      };
+      dfs(todos, '');
+      return rows;
+    },
+
+    // ---------- Rebuild (import) ----------
+    rebuildTodosFromCSV(rows) {
+      const byId = new Map();
+      // create shallow nodes
+      for (const r of rows) {
+        const node = {
+          id: r.id || this.generateUniqueId(),
+          type: r.type || 'list',
+          component: r.component || (r.type === 'checkbox' ? 'checkBoxToDo' : r.type === 'bar' ? 'barToDo' : 'toDoList'),
+          text: r.text || '',
+          done: Number.isFinite(+r.done) ? +r.done : 0,
+          weight: Number.isFinite(+r.weight) ? +r.weight : 1,
+          emoji: r.emoji || '📝',
+          created: r.created || '',
+          modified: r.modified || '',
+          dateStart: r.dateStart || '',
+          dateEnd: r.dateEnd || '',
+          star: r.star == 1 || r.star === 'true',
+          urgent: r.urgent == 1 || r.urgent === 'true',
+          archived: r.archived == 1 || r.archived === 'true',
+          color: r.color || null,
+          progressBinary: r.progressBinary == 1 || r.progressBinary === 'true',
+          progressVisable: r.progressVisable == 1 || r.progressVisable === 'true',
+          countdownVisable: r.countdownVisable == 1 || r.countdownVisable === 'true',
+          todos: [],
+          __parentId: r.parentId || '',
+          __order: Number.isFinite(+r.order) ? +r.order : 0,
+        };
+        byId.set(node.id, node);
+      }
+      // attach to parents
+      const roots = [];
+      for (const node of byId.values()) {
+        if (node.__parentId && byId.has(node.__parentId)) {
+          byId.get(node.__parentId).todos.push(node);
+        } else {
+          roots.push(node);
+        }
+      }
+      // sort children by order (recursively)
+      const sortRec = (arr) => {
+        arr.sort((a, b) => a.__order - b.__order);
+        arr.forEach(n => n.todos && n.todos.length && sortRec(n.todos));
+      };
+      sortRec(roots);
+      // cleanup temp fields
+      const cleanup = (arr) => arr.map(n => {
+        const { __parentId, __order, ...clean } = n;
+        if (clean.todos?.length) clean.todos = cleanup(clean.todos);
+        return clean;
+      });
+      return cleanup(roots);
+    },
+
+    // ---------- Clipboard actions ----------
+    copyAllCSV() {
+      const headers = [
+        'id', 'parentId', 'order', 'type', 'component', 'text', 'done', 'weight',
+        'emoji', 'created', 'modified', 'dateStart', 'dateEnd',
+        'star', 'urgent', 'archived', 'color', 'progressBinary', 'progressVisable', 'countdownVisable'
+      ];
+      const rows = this.flattenTodosForCSV(this.store ? this.store.todos : this.todos);
+      const csv = [
+        headers.join(','),
+        ...rows.map(r => headers.map(h => this.csvEscape(r[h])).join(','))
+      ].join('\n');
+      navigator.clipboard.writeText(csv).then(() => {
+        alert('Todos copied to clipboard as CSV!');
+      });
+    },
+    pasteAllCSV() {
+      navigator.clipboard.readText().then(text => {
+        const { headers, rows } = this.parseCSV(text);
+        // szybka walidacja minimalna
+        const must = ['id', 'parentId', 'order', 'type', 'component', 'done', 'weight'];
+        const ok = must.every(h => headers.includes(h));
+        if (!ok) {
+          alert('Invalid CSV format. Missing required headers.');
+          return;
+        }
+        const tree = this.rebuildTodosFromCSV(rows);
+        if (this.store) {
+          this.store.todos = tree;
+          this.store.persistNow?.();
+        } else {
+          this.todos = tree;
+          this.updateLocalStorage?.();
+        }
+        alert('Todos pasted from CSV!');
+      }).catch(() => alert('Failed to read clipboard.'));
+    },
+
+    buildCSV() {
+      const headers = [
+        'id', 'parentId', 'order', 'type', 'component', 'text', 'done', 'weight',
+        'emoji', 'created', 'modified', 'dateStart', 'dateEnd',
+        'star', 'urgent', 'archived', 'color', 'progressBinary', 'progressVisable', 'countdownVisable'
+      ];
+      const sourceTodos = this.store ? this.store.todos : this.todos;
+      const rows = this.flattenTodosForCSV(sourceTodos);
+      const body = rows.map(r => headers.map(h => this.csvEscape(r[h])).join(',')).join('\r\n');
+      const head = headers.join(',');
+      return head + '\r\n' + body;
+    },
+
+    // Save CSV to file (adds UTF-8 BOM for Excel)
+    saveAllCSVFile() {
+      try {
+        const csv = this.buildCSV();
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const date = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `ProgressTODO-${date}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.warn('CSV download failed:', e);
+        alert('Failed to generate CSV.');
+      }
+    },
+
+    // Open file picker
+    openCSVFileDialog() {
+      this.$refs.csvInput?.click();
+    },
+
+    // Handle selected CSV file
+    onCSVFileSelected(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const text = String(reader.result || '');
+          const { headers, rows } = this.parseCSV(text);
+          const must = ['id', 'parentId', 'order', 'type', 'component', 'done', 'weight'];
+          const ok = must.every(h => headers.includes(h));
+          if (!ok) {
+            alert('Invalid CSV format. Missing required headers.');
+            e.target.value = '';
+            return;
+          }
+          const tree = this.rebuildTodosFromCSV(rows);
+          if (this.store) {
+            this.store.todos = tree;
+            this.store.persistNow?.();
+          } else {
+            this.todos = tree;
+            this.updateLocalStorage?.();
+          }
+          alert('CSV imported!');
+        } catch (err) {
+          console.warn('CSV import error:', err);
+          alert('Failed to parse CSV.');
+        } finally {
+          e.target.value = ''; // allow re-uploading same file
+        }
+      };
+      reader.onerror = () => {
+        alert('Failed to read file.');
+        e.target.value = '';
+      };
+      reader.readAsText(file); // UTF-8 by default
+    },
+
+    /* #endregion CSV */
   },
   watch: {
-    todos: {
+    'store.todos': {
       handler() {
-        this.updateLocalStorage();
+        this.store.persistNow();
       },
       deep: true,
     },
   },
   computed: {
-    showModals() {
-      return this.showNimoModal || this.showStarModal || this.showUrgentModal;
-    },
-    flattenedTodos() {
-      return this.flattenTodos(this.todos);
-    },
-    flattenedStarredTodos() {
-      return this.flattenTodos(this.todos).filter(todo => todo.star);
-    },
-    flattenedUrgentTodos() {
-      return this.flattenTodos(this.todos).filter(todo => todo.urgent);
-    },
-    visibleTodos() {
-      // hide archived and done depending on showArchived and showDone
-      return this.todos.filter(todo => (this.showArchived || !todo.archived) && (this.showDone || todo.done < 1));
-    },
-    doneWeightedCount() {
-      return this.flattenTodos(this.todos)
-        .reduce((acc, todo) => {
-          const w = Number.isFinite(+todo.weight) ? +todo.weight : 1;
-          const p = todo.done; 
-          return acc + w * p;
-        }, 0);
-    },
-    totalWeightedCount() {
-      return this.flattenTodos(this.todos)
-        .reduce((acc, todo) => acc + (Number.isFinite(+todo.weight) ? +todo.weight : 1), 0);
-    }
+    showModals() { return this.showNimoModal || this.showStarModal || this.showUrgentModal; },
+    todos: { get() { return this.store.todos; } },
+    showArchived: { get() { return this.store.settings.showArchived; } },
+    showDone: { get() { return this.store.settings.showDone; } },
+    showBattlePass: { get() { return this.store.settings.showBattlePass; } },
+    visibleTodos() { return this.store.visibleTodos; },
+    flattenedTodos() { return this.store.flattenedTodos; },
+    flattenedStarredTodos() { return this.store.flattenedStarredTodos; },
+    flattenedUrgentTodos() { return this.store.flattenedUrgentTodos; },
+    doneWeightedCount() { return this.store.doneWeightedCount; },
+    totalWeightedCount() { return this.store.totalWeightedCount; },
   },
   mounted() {
+    document.addEventListener('keydown', this.handleEscape);
     document.addEventListener("click", this.handleClickOutside);
   },
   beforeUnmount() {
+    document.removeEventListener('keydown', this.handleEscape);
     document.removeEventListener("click", this.handleClickOutside);
   },
 };

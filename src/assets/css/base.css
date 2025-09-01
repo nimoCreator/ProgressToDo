@@ -42,6 +42,8 @@ button .material-symbols-rounded.icon {
 #appWrapper {
     overflow-y: visible;
 
+    width: 100%;
+
     display: grid;
     grid-template-columns: 1fr;
 }
@@ -58,7 +60,7 @@ button .material-symbols-rounded.icon {
 
 }
 
-#gridPanel > .draggables {
+#gridPanel>.draggables {
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -66,7 +68,7 @@ button .material-symbols-rounded.icon {
     padding: 0.5rem;
 }
 
-#gridPanel > .draggables > .toDo {
+#gridPanel>.draggables>.toDo {
     flex-grow: 1;
     min-width: 25rem;
     box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
@@ -214,6 +216,8 @@ button.color:active {
     flex-direction: column;
     position: absolute;
     left: -1.5rem;
+
+    pointer-events: none;
 }
 
 .medal {
@@ -271,7 +275,7 @@ button.color:active {
     user-select: none;
 
     background-image: linear-gradient(90deg, #444, #222);
-    border: 1px solid #555;
+    border: 1px solid color-mix(in srgb, var(--color, #60616a), #60616a 50%);
     border-right: none;
 
     border-radius: 0.5rem 0 0 0.5rem;
@@ -290,7 +294,10 @@ button.color:active {
     transition: 0.2s ease-in-out;
 
     box-sizing: content-box;
+
+    transform: translateY(-0.5px);
 }
+
 .toDo {
     transition: 0.2s ease-in-out;
 }
@@ -298,29 +305,34 @@ button.color:active {
 .toDo:hover {
     border-radius: 0 1rem 1rem 0;
 }
-.toDo:hover > .dragHandle {
+
+.toDo:hover>.dragHandle {
     opacity: 1;
     width: 1.5rem !important;
     margin-inline: -1.5rem -0rem !important;
 }
-.barToDo:hover > .dragHandle {
+
+.barToDo:hover>.dragHandle {
     opacity: 1;
     width: 1.5rem !important;
     margin-inline: -0.5rem -0.5rem !important;
 }
-.checkBoxToDo:hover > .dragHandle {
+
+.checkBoxToDo:hover>.dragHandle {
     opacity: 1;
     width: 1.5rem !important;
     margin-inline: -0.5rem -0.5rem !important;
 }
 
 
-.toDo > .dragHandle {
+.toDo>.dragHandle {
     border-radius: 1rem 0 0 1rem;
 }
+
 .dragHandle:hover {
     background-image: linear-gradient(90deg, #555, #222);
 }
+
 .dragHandle::after {
     content: '';
     position: absolute;
@@ -337,3 +349,20 @@ button.color:active {
 }
 
 /* #endregion DRAGGING */
+
+
+
+
+
+/* Hide scrollbar but keep scrolling */
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    /* IE/Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari/Opera */
+}

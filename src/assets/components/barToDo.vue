@@ -1,5 +1,7 @@
 <template>
-    <div class="barToDo" :style="{
+    <div class="barToDo" 
+        v-show="isVisible" 
+        :style="{
         ...(
             todo.color ? {
                 '--color': todo.color,
@@ -11,7 +13,8 @@
                 '--colorA': parentColor + 'aa'
             } : {}
         )
-    }" :id="todo.id">
+    }" :id="todo.id"
+    @contextmenu.stop.prevent.exact="toggleMenu">
         <span class="dragHandle" title="Drag list"></span>
         <div class="medals" v-if="anyMedal">
             <div v-if="todo.star" class="medal starMedal">
@@ -86,6 +89,7 @@
 
 <script>
 
+import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import NameIcon from '../svg/NameIcon.vue';
 import nimoColorPicker from './nimoColorPicker.vue';
 import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
@@ -95,6 +99,10 @@ export default {
     components: {
         NameIcon,
         nimoColorPicker,
+    },
+    setup() {
+        const store = useTodosStore();
+        return { store };
     },
     data() {
         return {
@@ -123,10 +131,15 @@ export default {
             return this.todo.star || this.todo.urgent || this.todo.archived;
         },
         contrastColor() {
-            let color = this.todo.color ? this.todo.color : this.parentColor;
-            let result = contrastColorFromRgbLike(color);
-            return result;
-        }
+            return contrastColorFromRgbLike(this.todo.color ? this.todo.color : this.parentColor);
+        },
+        isVisible() {
+            const s = this.store.settings;
+            const passArchived = s.showArchived || !this.todo.archived;
+            const doneVal = Number.isFinite(+this.todo.done) ? +this.todo.done : (this.todo.done ? 1 : 0);
+            const passDone = s.showDone || doneVal < 1;
+            return passArchived && passDone;
+        },
     },
     methods: {
         deleteToDo() {
@@ -135,6 +148,12 @@ export default {
         },
         toggleMenu() {
             this.showMenu = !this.showMenu;
+        },
+        handleEscape(e) {
+            if (e.key === 'Escape') {
+                this.showMenu = false;
+                this.showColorPallete = false;
+            }
         },
         handleClickOutside(event) {
             // Skip closing if clicked inside the color palette
@@ -171,10 +190,12 @@ export default {
     },
     mounted() {
         document.addEventListener('click', this.handleClickOutside);
+        document.addEventListener('keydown', this.handleEscape);
         this.adjustWidth({ target: { value: this.todo.text } });
     },
     beforeUnmount() {
         document.removeEventListener('click', this.handleClickOutside);
+        document.removeEventListener('keydown', this.handleEscape);
     },
 }
 </script>

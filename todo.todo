@@ -1,10 +1,32 @@
+Initial v0.1.0
+- Initial release of ProgressTODO
+- Added support for Checkbox, Bar, and nested List todos
+- Added weights for todos to affect progress
+- Added countdown timers for tasks with start/end dates
+- Added Starring, Urgent, and Archiving of todos
+- Added localStorage persistence
+- Added Copy and Paste of todos as JSON
+- Added basic modals for About, Starred, and Urgent
+- Implemented minimal clean UI
+
+Update v0.2.0
+- Added Drag abd Drop
+- Added a Battle Pass
+- Added Hiding and Showing Done ToDos with continuous support for Archiving them
+- Imporved UI Design
+- Fixed issues with Scroll To Top
+- ESC key closes all menus and models globally
+- Moved app state to pinia powered storage
+- Changed the copied data from JSON to CSV, cutting the size of average todolist in half!
+- FIX: made all components use the same [ name / label / text ]
+
+
+
+* FUTURE IDEAS *
 
 Core Features: 
 - Implement task filtering
-- Implement task ordering
 - Add search bar
-- Add tag system with color support
-- Add drag-and-drop for reordering
 - Add reminders system with notification support
 - Add recurring tasks logic
 - Add calendar view and task syncing

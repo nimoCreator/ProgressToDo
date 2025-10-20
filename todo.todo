@@ -31,6 +31,10 @@ Core Features:
 - Add recurring tasks logic
 - Add calendar view and task syncing
 - Add task dependencies
+- Add image task thats editable
+- Add notes to for tasks
+- Add task dependency
+- Add task priority
 
 Cloud & Sync:
 - Set up user accounts and login
@@ -38,7 +42,7 @@ Cloud & Sync:
 - Support offline mode with localStorage fallback
 
 AI Features: 
-- Add AI-generated task suggestions based on existing tasks
+- Add AI-generated task suggestions based on existing tasks and priorities
 - Implement AI-powered task generation from freeform notes
 - Build AI to recommend next task to do
 - Add AI planning assistant for daily agendas

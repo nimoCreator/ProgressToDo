@@ -1,6 +1,6 @@
 <template>
     <div :class="{ toDo: true, hasCountdown: todo.countdownVisable, hasProgress: todo.progressVisable }"
-        :style="{ '--color': todo.color }" :id="todo.id" @contextmenu.stop.prevent.exact="toggleMenu">
+        :style="{ '--color': todo.color }" :id="todo.id" @contextmenu.stop.prevent.exact="toggleMenu" :title="todo.text">
         <span class="dragHandle dragHandleList" title="Drag list"></span>
 
         <div class="content">

@@ -30,7 +30,6 @@ Core Features:
 - Add reminders system with notification support
 - Add recurring tasks logic
 - Add calendar view and task syncing
-- Add task dependencies
 - Add image task thats editable
 - Add notes to for tasks
 - Add task dependency

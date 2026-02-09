@@ -14,7 +14,9 @@
             } : {}
         )
     }" :id="todo.id"
-    @contextmenu.stop.prevent.exact="toggleMenu">
+    @contextmenu.stop.prevent.exact="toggleMenu"
+    :title="todo.text"
+    >
         <span class="dragHandle" title="Drag list"></span>
         <div class="medals" v-if="anyMedal">
             <div v-if="todo.star" class="medal starMedal">

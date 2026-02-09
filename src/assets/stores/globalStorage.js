@@ -16,6 +16,7 @@ export const useTodosStore = defineStore('todos', {
         settings: {
             showArchived: false,
             showBattlePass: false,
+            showAiAssist: false,
             showDone: false,
         },
     }),
@@ -73,6 +74,7 @@ export const useTodosStore = defineStore('todos', {
             const s = raw.settings || {};
             this.settings.showArchived = !!s.showArchived;
             this.settings.showBattlePass = !!s.showBattlePass;
+            this.settings.showAiAssist = !!s.showAiAssist;
             this.settings.showDone = !!s.showDone;
         },
 

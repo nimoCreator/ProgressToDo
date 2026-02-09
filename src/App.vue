@@ -34,6 +34,11 @@
           <span class="buttonLabel"> {{ showBattlePass ? "Hide" : "Show" }} BattlePass </span>
         </button>
 
+        <button class="done" @click.stop="toggleAiAssist" :class="{ fill: showAiAssist }">
+          <span class="material-symbols-rounded icon" :class="{ fill: showAiAssist }">cards_star</span>
+          <span class="buttonLabel"> {{ showAiAssist ? "Hide" : "Show" }} AI Assist </span>
+        </button>
+
         <div class="divider">
           <span>data</span>
           <div class="horizontalLine"></div>
@@ -80,10 +85,12 @@
 
       <BattlePass :doneCount="doneWeightedCount" :totalCount="totalWeightedCount" v-if="showBattlePass" />
 
-      <Draggable v-model="visibleTodos" class="draggables" item-key="id" handle=".dragHandleList" :animation="200"
-        :ghost-class="'drag-ghost'">
-        <template #item="{ index }">
-          <toDoList :key="todos[index].id" v-model="todos[index]" @deleteToDo="deleteToDo(index)" />
+      <AiSuggestion  v-if="showAiAssist" />
+
+      <Draggable v-model="visibleTodosModel" class="draggables" item-key="id" handle=".dragHandleList"
+        :animation="200" :ghost-class="'drag-ghost'">
+        <template #item="{ element, index }">
+          <toDoList :key="element.id" v-model="visibleTodosModel[index]" @deleteToDo="deleteToDoById(element.id)" />
         </template>
       </Draggable>
 
@@ -222,6 +229,7 @@
 
 import { useTodosStore, installTodosPersistence } from '@/assets/stores/globalStorage.js';
 import toDoList from "@/assets/components/toDoList.vue";
+import AiSuggestion from "@/assets/components/aiSuggestion.vue";
 
 import { appVersion, releaseDate } from "./assets/js/consts";
 import Favicon from "./assets/svg/Favicon.vue";
@@ -237,6 +245,7 @@ export default {
     toDoList,
     Favicon,
     nimoIcon,
+    AiSuggestion,
     templateTodos,
     Draggable,
     BattlePass
@@ -256,7 +265,6 @@ export default {
 
       appVersion: appVersion,
       releaseDate: releaseDate,
-
     };
   },
   methods: {
@@ -290,10 +298,14 @@ export default {
       this.updateLocalStorage();
     },
 
-    /* #region LOCAL STORAGE */
+// #region LOCALSTORAGE 
 
     deleteToDo(index) {
       this.store.deleteToDo(index);
+    },
+    deleteToDoById(id) {
+      const index = this.store.todos.findIndex(t => t.id === id);
+      if (index >= 0) this.store.deleteToDo(index);
     },
     clearLocalStorage() {
       if (confirm("Are you sure you want to delete all your todos?")) {
@@ -302,7 +314,7 @@ export default {
       }
     },
 
-    /* #endregion LOCAL STORAGE */
+// #endregion LOCALSTORAGE 
 
     scrollTop() {
       document.querySelector("html").scrollTo({
@@ -345,7 +357,25 @@ export default {
       this.store.toggleShowDone();
     },
     toggleBattlePass() {
-      this.store.toggleBattlePass();
+      if(!this.showBattlePass) 
+        this.showOnly('BattlePass');
+      else
+        this.hideAllTopPanels();
+    },
+    toggleAiAssist() {
+      if(!this.showAiAssist) 
+        this.showOnly('AiAssist');
+      else
+        this.hideAllTopPanels();
+    },
+    hideAllTopPanels() {
+      this.store.settings.showBattlePass = false;
+      this.store.settings.showAiAssist = false;
+    },
+    showOnly(panel) {
+      this.hideAllTopPanels();
+      if(panel === 'BattlePass') this.store.settings.showBattlePass = true;
+      else if(panel === 'AiAssist') this.store.settings.showAiAssist = true;
     },
     closeAllModals() {
       this.showNimoModal = false;
@@ -367,6 +397,8 @@ export default {
     handleEscape(e) {
       if (e.key === 'Escape') {
         this.showMenu = false;
+        this.hideAllTopPanels();
+        this.closeAllModals();
       }
     },
     handleClickOutside(event) {
@@ -414,6 +446,13 @@ export default {
     },
     clamp01(x) { return Math.max(0, Math.min(1, x)); },
 
+    reorderVisibleTodos(nextVisible) {
+      const visibleIds = new Set(nextVisible.map(t => t.id));
+      let i = 0;
+      const newTodos = this.store.todos.map(t => visibleIds.has(t.id) ? nextVisible[i++] : t);
+      this.store.todos = newTodos;
+    },
+
     /* #region CSV */
 
     csvEscape(v) {
@@ -457,7 +496,6 @@ export default {
       return { headers, rows };
     },
 
-    // ---------- Flatten (export) ----------
     flattenTodosForCSV(todos) {
       const rows = [];
       const dfs = (arr, parentId = '') => {
@@ -491,10 +529,8 @@ export default {
       return rows;
     },
 
-    // ---------- Rebuild (import) ----------
     rebuildTodosFromCSV(rows) {
       const byId = new Map();
-      // create shallow nodes
       for (const r of rows) {
         const node = {
           id: r.id || this.generateUniqueId(),
@@ -521,7 +557,6 @@ export default {
         };
         byId.set(node.id, node);
       }
-      // attach to parents
       const roots = [];
       for (const node of byId.values()) {
         if (node.__parentId && byId.has(node.__parentId)) {
@@ -530,13 +565,11 @@ export default {
           roots.push(node);
         }
       }
-      // sort children by order (recursively)
       const sortRec = (arr) => {
         arr.sort((a, b) => a.__order - b.__order);
         arr.forEach(n => n.todos && n.todos.length && sortRec(n.todos));
       };
       sortRec(roots);
-      // cleanup temp fields
       const cleanup = (arr) => arr.map(n => {
         const { __parentId, __order, ...clean } = n;
         if (clean.todos?.length) clean.todos = cleanup(clean.todos);
@@ -545,7 +578,6 @@ export default {
       return cleanup(roots);
     },
 
-    // ---------- Clipboard actions ----------
     copyAllCSV() {
       const headers = [
         'id', 'parentId', 'order', 'type', 'component', 'text', 'done', 'weight',
@@ -676,7 +708,12 @@ export default {
     showArchived: { get() { return this.store.settings.showArchived; } },
     showDone: { get() { return this.store.settings.showDone; } },
     showBattlePass: { get() { return this.store.settings.showBattlePass; } },
+    showAiAssist: { get() { return this.store.settings.showAiAssist; } },
     visibleTodos() { return this.store.visibleTodos; },
+    visibleTodosModel: {
+      get() { return this.store.visibleTodos; },
+      set(nextVisible) { this.reorderVisibleTodos(nextVisible); }
+    },
     flattenedTodos() { return this.store.flattenedTodos; },
     flattenedStarredTodos() { return this.store.flattenedStarredTodos; },
     flattenedUrgentTodos() { return this.store.flattenedUrgentTodos; },

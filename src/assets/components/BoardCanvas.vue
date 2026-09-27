@@ -21,9 +21,11 @@ export default {
     props: {
         // { x, y, zoom } — mutated in place so it is persisted with the store.
         viewport: { type: Object, required: true },
+        // 'board' (live, editable) or 'archive' (read-only archive view).
+        mode: { type: String, default: 'board' },
     },
     provide() {
-        return { board: this };
+        return { board: this, archiveMode: this.mode === 'archive' };
     },
     data() {
         return {

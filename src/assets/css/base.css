@@ -347,6 +347,42 @@ button.color:active {
 
 /* #endregion DRAGGING */
 
+/* #region ARCHIVE VIEW */
+
+/* Read-only: nothing can be dragged or edited. */
+.readOnly > .dragHandle {
+    display: none;
+}
+
+.toDo.readOnly:hover {
+    border-radius: 1rem;
+}
+
+.readOnly input[readonly],
+.readOnly input:disabled,
+.readOnly .checkbox,
+.readOnly .emoji {
+    cursor: default;
+}
+
+/* Items that are not archived are shown dimmed, only as context for the archived ones.
+   A list dims its own parts, not its children, so archived children keep full opacity. */
+.checkBoxToDo.archiveContext,
+.barToDo.archiveContext {
+    opacity: 0.5;
+}
+
+.toDo.archiveContext > .content > :not(.draggables) {
+    opacity: 0.5;
+}
+
+.toDo.archiveContext {
+    border-style: dashed;
+    background-color: color-mix(in srgb, #1e1f24 50%, transparent);
+}
+
+/* #endregion ARCHIVE VIEW */
+
 
 
 

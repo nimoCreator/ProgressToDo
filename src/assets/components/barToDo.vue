@@ -1,6 +1,7 @@
 <template>
     <div class="barToDo" 
         v-show="isVisible" 
+        :class="archiveClasses"
         :style="{
         ...(
             todo.color ? {
@@ -14,8 +15,8 @@
             } : {}
         )
     }" :id="todo.id"
-    @contextmenu.stop.prevent.exact="toggleMenu"
-    :title="todo.text"
+    @contextmenu.stop.prevent.exact="hasMenu && toggleMenu()"
+    :title="archivedLabel || todo.text"
     >
         <span class="dragHandle" title="Drag list"></span>
         <div class="medals" v-if="anyMedal">
@@ -30,14 +31,15 @@
             </div>
         </div>
         <label :class="{ done: todo.done }">
-            <input type="range" v-model="todo.done" min="0" max="1" step="0.01" />
+            <input type="range" v-model="todo.done" min="0" max="1" step="0.01" :disabled="archiveMode" />
             <div class="label" :style="{ '--percentage': todo.done, 'color': contrastColor }">
                 {{ Math.round(todo.done * 100) }}%
             </div>
         </label>
-        <div class="menu" @click="toggleMenu">
+        <div class="menu" v-if="hasMenu" @click="toggleMenu">
             <span class="menuOpenButton"> ... </span>
             <div class="buttons" :class="{ show: showMenu }">
+                <template v-if="!archiveMode">
                 <div class="divider">
                     <span>modify</span>
                     <div class="horizontalLine"></div>
@@ -84,6 +86,21 @@
                     <span class="material-symbols-rounded icon">delete</span>
                     <span class="buttonLabel"> Delete ToDo </span>
                 </button>
+                </template>
+                <template v-else>
+                    <div class="divider">
+                        <span>archive</span>
+                        <div class="horizontalLine"></div>
+                    </div>
+                    <button class="restore" @click.stop="restoreFromArchive">
+                        <span class="material-symbols-rounded icon">unarchive</span>
+                        <span class="buttonLabel"> Restore </span>
+                    </button>
+                    <button class="delete" @click.stop="deleteFromArchive">
+                        <span class="material-symbols-rounded icon">delete_forever</span>
+                        <span class="buttonLabel"> Delete Permanently </span>
+                    </button>
+                </template>
             </div>
         </div>
     </div>
@@ -92,6 +109,7 @@
 <script>
 
 import { isNodeVisible, setArchived } from '@/assets/js/tree.js';
+import archiveMode from '@/assets/js/archiveMode.js';
 import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import NameIcon from '../svg/NameIcon.vue';
 import nimoColorPicker from './nimoColorPicker.vue';
@@ -99,6 +117,7 @@ import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
 
 export default {
     name: 'barToDo',
+    mixins: [archiveMode],
     components: {
         NameIcon,
         nimoColorPicker,
@@ -137,7 +156,7 @@ export default {
             return contrastColorFromRgbLike(this.todo.color ? this.todo.color : this.parentColor);
         },
         isVisible() {
-            return isNodeVisible(this.todo, this.store.settings);
+            return this.archiveMode || isNodeVisible(this.todo, this.store.settings);
         },
     },
     methods: {

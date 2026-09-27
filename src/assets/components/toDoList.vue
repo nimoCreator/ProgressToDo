@@ -1,6 +1,7 @@
 <template>
-    <div :class="{ toDo: true, hasCountdown: todo.countdownVisable, hasProgress: todo.progressVisable }"
-        :style="{ '--color': todo.color }" :id="todo.id" @contextmenu.stop.prevent.exact="toggleMenu" :title="todo.text">
+    <div :class="{ toDo: true, hasCountdown: todo.countdownVisable, hasProgress: todo.progressVisable, ...archiveClasses }"
+        :style="{ '--color': todo.color }" :id="todo.id" @contextmenu.stop.prevent.exact="hasMenu && toggleMenu()"
+        :title="archivedLabel || todo.text">
         <span class="dragHandle dragHandleList" title="Drag list"></span>
 
         <div class="content">
@@ -20,12 +21,13 @@
                     </div>
                 </div>
 
-                <div class="emoji" @click="toggleEmojiPicker"> {{ todo.emoji || '📝' }} </div>
+                <div class="emoji" @click="!archiveMode && toggleEmojiPicker()"> {{ todo.emoji || '📝' }} </div>
                 <emoji-picker @click.stop v-if="showEmojiPicker" @select="selectEmoji" theme="auto" />
-                <input type="text" class="toDoName" v-model="todo.text">
-                <div class="menu" @click.stop="toggleMenu">
+                <input type="text" class="toDoName" v-model="todo.text" :readonly="archiveMode">
+                <div class="menu" v-if="hasMenu" @click.stop="toggleMenu">
                     <span class="menuOpenButton"> ... </span>
                     <div class="buttons" :class="{ show: showMenu }">
+                        <template v-if="!archiveMode">
                         <template v-if="isTopLevel">
                             <div class="divider">
                                 <span>board</span>
@@ -127,6 +129,21 @@
                             <span class="material-symbols-rounded icon">delete</span>
                             <span class="buttonLabel"> Delete List </span>
                         </button>
+                        </template>
+                        <template v-else>
+                            <div class="divider">
+                                <span>archive</span>
+                                <div class="horizontalLine"></div>
+                            </div>
+                            <button class="restore" @click.stop="restoreFromArchive">
+                                <span class="material-symbols-rounded icon">unarchive</span>
+                                <span class="buttonLabel"> Restore </span>
+                            </button>
+                            <button class="delete" @click.stop="deleteFromArchive">
+                                <span class="material-symbols-rounded icon">delete_forever</span>
+                                <span class="buttonLabel"> Delete Permanently </span>
+                            </button>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -138,10 +155,10 @@
                     </div>
                 </div>
                 <div class="dateStart">
-                    <input type="datetime-local" v-model="todo.dateStart">
+                    <input type="datetime-local" v-model="todo.dateStart" :readonly="archiveMode">
                 </div>
                 <div class="dateEnd">
-                    <input type="datetime-local" v-model="todo.dateEnd">
+                    <input type="datetime-local" v-model="todo.dateEnd" :readonly="archiveMode">
                 </div>
             </div>
 
@@ -152,7 +169,7 @@
                 </div>
             </div>
 
-            <Draggable class="draggables" v-model="todo.todos" item-key="id" group="todos" handle=".dragHandle"
+            <Draggable class="draggables" v-model="todo.todos" item-key="id" group="todos" handle=".dragHandle" :disabled="archiveMode"
                 :animation="200" :ghost-class="'drag-ghost'"
                 :filter="'.menu, .colorPallete, input, button, .v3-emoji-picker'" :prevent-on-filter="false">
                 <template #item="{ element, index }">
@@ -162,6 +179,7 @@
                         v-model="todo.todos[index]"
                         @deleteToDo="deleteElement(index)"
                         :parentColor="todo.color ? todo.color : parentColor"
+                        :inheritedArchived="effectivelyArchived"
                     />
                 </template>
             </Draggable>
@@ -180,11 +198,13 @@ import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import Draggable from 'vuedraggable';
 
 import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
-import { computeListProgress, createNode, isNodeVisible, setArchived } from '@/assets/js/tree.js';
+import { computeListProgress, createNode, isNodeVisible, pruneLive, setArchived } from '@/assets/js/tree.js';
+import archiveMode from '@/assets/js/archiveMode.js';
 
 
 export default {
     name: 'ToDoList',
+    mixins: [archiveMode],
     components: {
         checkBoxToDo,
         EmojiPicker,
@@ -238,14 +258,16 @@ export default {
             this.todo.todos.push(createNode('list'));
         },
 
+        // Removes live items only; archived items stay (they are still shown in the archive view).
         clearToDoList() {
-            this.todo.todos = [];
+            pruneLive(this.todo);
         },
         deleteElement(index) {
             this.todo.todos.splice(index, 1);
             this.updateProgress();
         },
         deleteToDo() {
+            if (!this.confirmDeleteWithArchived()) return;
             this.$emit('deleteToDo', this.todo);
         },
         toggleProgress() {
@@ -379,7 +401,7 @@ export default {
         },
 
         isVisibleChild(t) {
-            return isNodeVisible(t, this.store.settings);
+            return this.archiveMode || isNodeVisible(t, this.store.settings);
         },
     },
     mounted() {

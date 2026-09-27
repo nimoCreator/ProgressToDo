@@ -19,9 +19,9 @@
           <span class="buttonLabel"> Show Urgent </span>
         </button>
 
-        <button class="archived" @click.stop="toggleShowArchived" :class="{ fill: showArchived }">
-          <span class="material-symbols-rounded icon" :class="{ fill: showArchived }">inventory_2</span>
-          <span class="buttonLabel"> {{ showArchived ? "Hide" : "Show" }} Archived </span>
+        <button class="archived" @click.stop="toggleArchiveView" :class="{ fill: showArchiveView }">
+          <span class="material-symbols-rounded icon" :class="{ fill: showArchiveView }">inventory_2</span>
+          <span class="buttonLabel"> {{ showArchiveView ? "Back to Board" : "Show Archive" }} </span>
         </button>
 
         <button class="lockLayout" @click.stop="toggleLockLayout" :class="{ fill: lockLayout }">
@@ -86,19 +86,42 @@
       </div>
     </div>
 
-    <BoardCanvas ref="board" :viewport="store.viewport">
+    <BoardCanvas v-if="!showArchiveView" key="board" ref="board" :viewport="store.viewport">
       <CanvasItem v-for="list in visibleTodos" :key="list.id" :item="list"
         :locked="list.locked || store.settings.lockLayout" @front="store.bringToFront(list.id)">
         <toDoList :modelValue="list" isTopLevel @deleteToDo="deleteToDoById(list.id)" />
       </CanvasItem>
     </BoardCanvas>
 
+    <!-- Archive: the same live lists, read-only, shown where they sit on the board. -->
+    <BoardCanvas v-else key="archive" ref="board" mode="archive" :viewport="archiveViewport">
+      <CanvasItem v-for="list in archiveLists" :key="list.id" :item="list" locked>
+        <toDoList :modelValue="list" isTopLevel @deleteToDo="deleteToDoById(list.id)" />
+      </CanvasItem>
+    </BoardCanvas>
+
+    <div class="archiveBanner" v-if="showArchiveView" @click.stop>
+      <span class="material-symbols-rounded icon fill">inventory_2</span>
+      <span class="archiveTitle">Archive</span>
+      <span class="archiveCount">{{ archivedCount }} archived</span>
+      <button @click="closeArchiveView">
+        <span class="material-symbols-rounded icon">arrow_back</span>
+        <span class="buttonLabel">Back to board</span>
+      </button>
+    </div>
+
     <div class="hudTop" v-if="showBattlePass || showAiAssist" @click.stop>
       <BattlePass :doneCount="doneWeightedCount" :totalCount="totalWeightedCount" v-if="showBattlePass" />
       <AiSuggestion v-if="showAiAssist" />
     </div>
 
-    <div class="emptyState" v-if="visibleTodos.length === 0" @click.stop>
+    <div class="emptyState" v-if="showArchiveView && archiveLists.length === 0" @click.stop>
+      <p class="inlineTooltipBig">Nothing archived yet</p>
+      <p class="inlineTooltip">Archive a task or list from its menu and it will show up here.</p>
+      <button @click="closeArchiveView">Back to board</button>
+    </div>
+
+    <div class="emptyState" v-if="!showArchiveView && visibleTodos.length === 0" @click.stop>
       <p class="inlineTooltipBig">No todos found</p>
       <p class="inlineTooltip">Add a new list, or start from the demo.</p>
       <button @click="addTodo" class="addTodo">
@@ -112,7 +135,7 @@
     </div>
 
     <div class="mainButtons" @click.stop>
-      <button @click="addTodo" class="newList" title="New list">
+      <button v-if="!showArchiveView" @click="addTodo" class="newList" title="New list">
         <span class="material-symbols-rounded icon fill">add</span>
         <span class="buttonLabel">New list</span>
       </button>
@@ -243,6 +266,14 @@ import nimoIcon from "./assets/svg/nimoIcon.vue";
 import { templateTodos } from "./assets/js/consts.js";
 import { createNode } from "@/assets/js/tree.js";
 import { focusTodo, snapToGrid } from "@/assets/js/board.js";
+
+// Columns of the CSV backup. Older files without the last four columns still import.
+const CSV_HEADERS = [
+  'id', 'parentId', 'order', 'type', 'component', 'text', 'done', 'weight',
+  'emoji', 'created', 'modified', 'dateStart', 'dateEnd',
+  'star', 'urgent', 'archived', 'color', 'progressBinary', 'progressVisable', 'countdownVisable',
+  'archivedAt', 'locked', 'x', 'y',
+];
 import BattlePass from "@/assets/components/BattlePass.vue";
 import BoardCanvas from "@/assets/components/BoardCanvas.vue";
 import CanvasItem from "@/assets/components/CanvasItem.vue";
@@ -272,6 +303,9 @@ export default {
       showNimoModal: false,
       showStarModal: false,
       showUrgentModal: false,
+      showArchiveView: false,
+      // Separate, unsaved view for the archive so the board keeps its own position.
+      archiveViewport: { x: 0, y: 0, zoom: 1 },
 
       appVersion: appVersion,
       releaseDate: releaseDate,
@@ -299,7 +333,7 @@ export default {
       if (index >= 0) this.store.deleteToDo(index);
     },
     clearLocalStorage() {
-      if (confirm("Are you sure you want to delete all your todos?")) {
+      if (confirm("Are you sure you want to delete all your todos, including the archive?")) {
         this.store.clearAll();
         this.store.persistNow();
       }
@@ -335,8 +369,17 @@ export default {
         }
       });
     },
-    toggleShowArchived() {
-      this.store.toggleShowArchived();
+    toggleArchiveView() {
+      if (this.showArchiveView) this.closeArchiveView();
+      else this.openArchiveView();
+    },
+    openArchiveView() {
+      this.showArchiveView = true;
+      this.showMenu = false;
+      this.$nextTick(() => this.$refs.board.fitAll({ animate: false }));
+    },
+    closeArchiveView() {
+      this.showArchiveView = false;
     },
     toggleShowDone() {
       this.store.toggleShowDone();
@@ -398,6 +441,7 @@ export default {
       }
     },
     scrollToItem(id) {
+      this.closeArchiveView();
       focusTodo(id);
       this.closeAllModals();
     },
@@ -420,6 +464,7 @@ export default {
     LoadDemo() {
       this.store.replaceTodos(JSON.parse(JSON.stringify(templateTodos)));
       this.store.persistNow();
+      this.closeArchiveView();
 
       this.closeAllModals()
       this.$nextTick(() => this.$refs.board.fitAll({ animate: false }));
@@ -490,6 +535,10 @@ export default {
             star: t.star ? 1 : 0,
             urgent: t.urgent ? 1 : 0,
             archived: t.archived ? 1 : 0,
+            archivedAt: t.archivedAt ?? '',
+            locked: t.locked ? 1 : 0,
+            x: parentId === '' && t.pos ? Math.round(t.pos.x) : '',
+            y: parentId === '' && t.pos ? Math.round(t.pos.y) : '',
             color: t.color ?? '',
             progressBinary: t.progressBinary ? 1 : 0,
             progressVisable: t.progressVisable ? 1 : 0,
@@ -520,6 +569,10 @@ export default {
           star: r.star == 1 || r.star === 'true',
           urgent: r.urgent == 1 || r.urgent === 'true',
           archived: r.archived == 1 || r.archived === 'true',
+          archivedAt: r.archivedAt || null,
+          locked: r.locked == 1 || r.locked === 'true',
+          ...(r.x !== undefined && r.x !== '' && r.y !== undefined && r.y !== '' && Number.isFinite(+r.x) && Number.isFinite(+r.y)
+            ? { pos: { x: +r.x, y: +r.y } } : {}),
           color: r.color || null,
           progressBinary: r.progressBinary == 1 || r.progressBinary === 'true',
           progressVisable: r.progressVisable == 1 || r.progressVisable === 'true',
@@ -552,11 +605,7 @@ export default {
     },
 
     copyAllCSV() {
-      const headers = [
-        'id', 'parentId', 'order', 'type', 'component', 'text', 'done', 'weight',
-        'emoji', 'created', 'modified', 'dateStart', 'dateEnd',
-        'star', 'urgent', 'archived', 'color', 'progressBinary', 'progressVisable', 'countdownVisable'
-      ];
+      const headers = CSV_HEADERS;
       const rows = this.flattenTodosForCSV(this.store ? this.store.todos : this.todos);
       const csv = [
         headers.join(','),
@@ -589,11 +638,7 @@ export default {
     },
 
     buildCSV() {
-      const headers = [
-        'id', 'parentId', 'order', 'type', 'component', 'text', 'done', 'weight',
-        'emoji', 'created', 'modified', 'dateStart', 'dateEnd',
-        'star', 'urgent', 'archived', 'color', 'progressBinary', 'progressVisable', 'countdownVisable'
-      ];
+      const headers = CSV_HEADERS;
       const sourceTodos = this.store ? this.store.todos : this.todos;
       const rows = this.flattenTodosForCSV(sourceTodos);
       const body = rows.map(r => headers.map(h => this.csvEscape(r[h])).join(',')).join('\r\n');
@@ -678,7 +723,8 @@ export default {
   computed: {
     showModals() { return this.showNimoModal || this.showStarModal || this.showUrgentModal; },
     todos: { get() { return this.store.todos; } },
-    showArchived: { get() { return this.store.settings.showArchived; } },
+    archiveLists() { return this.store.archiveLists; },
+    archivedCount() { return this.store.archivedCount; },
     showDone: { get() { return this.store.settings.showDone; } },
     lockLayout() { return this.store.settings.lockLayout; },
     showBattlePass: { get() { return this.store.settings.showBattlePass; } },
@@ -742,6 +788,41 @@ export default {
   outline: 0.125rem dashed #7c8187;
 
   transform: none;
+}
+
+.archiveBanner {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.375rem 0.375rem 0.875rem;
+
+  color: #c9ccd1;
+  background-color: #1e1f24;
+  border: 1px solid #3c3e43;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
+}
+
+.archiveBanner .archiveTitle {
+  font-weight: 700;
+}
+
+.archiveBanner .archiveCount {
+  color: #7c8187;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.archiveBanner button {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
 }
 
 .mainButtons {

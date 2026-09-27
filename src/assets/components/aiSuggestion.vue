@@ -225,7 +225,7 @@ export default {
         }
     },
     computed: {
-        todos() { return this.store?.flattenedTodos || []; },
+        todos() { return this.store?.liveFlattenedTodos || []; },
         mappedTodos() { return this.todos.map(this.toTaskChip).filter(Boolean); },
     }
 }

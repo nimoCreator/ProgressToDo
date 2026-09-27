@@ -120,11 +120,39 @@ export function doneValue(node) {
     return Number.isFinite(+node.done) ? +node.done : (node.done ? 1 : 0);
 }
 
+// True when any node below this one is archived.
+export function containsArchived(node) {
+    return (node.todos || []).some(t => t.archived || containsArchived(t));
+}
+
+// Top-level lists shown in the archive view: archived themselves or holding archived items.
+export function hasArchivedContent(node) {
+    return !!node.archived || containsArchived(node);
+}
+
+// Number of archived nodes in a subtree (a node inside an archived list is not counted twice).
+export function countArchived(node) {
+    return (node.todos || []).reduce((sum, t) => sum + (t.archived ? 1 : countArchived(t)), 0);
+}
+
+// Removes every live (non-archived) node from a list, keeping archived nodes and the lists
+// that hold them. Used by "Clear ToDoList" so it never deletes archived items.
+export function pruneLive(list) {
+    list.todos = (list.todos || []).filter(child => {
+        if (child.archived) return true;
+        if (containsArchived(child)) {
+            pruneLive(child);
+            return true;
+        }
+        return false;
+    });
+    return list;
+}
+
 // Single visibility rule for the live board (lists and tasks alike).
+// Archived nodes are never shown there; they have their own archive view.
 export function isNodeVisible(node, settings = {}) {
-    const passArchived = settings.showArchived || !node.archived;
-    const passDone = settings.showDone || doneValue(node) < 1;
-    return passArchived && passDone;
+    return !node.archived && (settings.showDone || doneValue(node) < 1);
 }
 
 /* #endregion */
@@ -199,7 +227,6 @@ export function migrateToV2(raw) {
         todos: prepareTopLevel(Array.isArray(raw.todos) ? raw.todos : []),
         viewport: raw.viewport && Number.isFinite(raw.viewport.zoom) ? raw.viewport : defaultViewport(),
         settings: {
-            showArchived: !!s.showArchived,
             showBattlePass: !!s.showBattlePass,
             showAiAssist: !!s.showAiAssist,
             showDone: !!s.showDone,

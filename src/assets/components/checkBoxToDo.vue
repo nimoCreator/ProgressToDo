@@ -1,5 +1,5 @@
 <template>
-    <div class="checkBoxToDo" v-show="isVisible" :class="{ done: todo.done }" :style="{
+    <div class="checkBoxToDo" v-show="isVisible" :class="{ done: todo.done, ...archiveClasses }" :style="{
         ...(
             todo.color ? {
                 '--color': todo.color,
@@ -12,8 +12,8 @@
             } : {}
         )
     }" :id="todo.id"
-    @contextmenu.stop.prevent.exact="toggleMenu"
-    :title="todo.text"
+    @contextmenu.stop.prevent.exact="hasMenu && toggleMenu()"
+    :title="archivedLabel || todo.text"
     >
         <span class="dragHandle" title="Drag list"></span>
 
@@ -30,7 +30,7 @@
         </div>
 
 
-        <div @click="toggleDone" class="checkbox">
+        <div @click="!archiveMode && toggleDone()" class="checkbox">
             <span class="checkboxField">
                 <svg>
                     <use xlink:href="#check-4"></use>
@@ -43,11 +43,12 @@
             </svg>
         </div>
         <div class="inputWrapper">
-            <input type="text" v-model="todo.text">
+            <input type="text" v-model="todo.text" :readonly="archiveMode">
         </div>
-        <div class="menu" @click="toggleMenu">
+        <div class="menu" v-if="hasMenu" @click="toggleMenu">
             <span class="menuOpenButton"> ... </span>
             <div class="buttons" :class="{ show: showMenu }">
+                <template v-if="!archiveMode">
 
                 <div class="divider">
                     <span>modify</span>
@@ -93,6 +94,21 @@
                     <span class="material-symbols-rounded icon">delete</span>
                     <span class="buttonLabel"> Delete ToDo </span>
                 </button>
+                </template>
+                <template v-else>
+                    <div class="divider">
+                        <span>archive</span>
+                        <div class="horizontalLine"></div>
+                    </div>
+                    <button class="restore" @click.stop="restoreFromArchive">
+                        <span class="material-symbols-rounded icon">unarchive</span>
+                        <span class="buttonLabel"> Restore </span>
+                    </button>
+                    <button class="delete" @click.stop="deleteFromArchive">
+                        <span class="material-symbols-rounded icon">delete_forever</span>
+                        <span class="buttonLabel"> Delete Permanently </span>
+                    </button>
+                </template>
 
             </div>
         </div>
@@ -102,11 +118,13 @@
 <script scoped>
 
 import { isNodeVisible, setArchived } from '@/assets/js/tree.js';
+import archiveMode from '@/assets/js/archiveMode.js';
 import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import nimoColorPicker from "@/assets/components/nimoColorPicker.vue";
 
 export default {
     name: 'checkBoxToDo',
+    mixins: [archiveMode],
     components: {
         nimoColorPicker,
     },
@@ -143,7 +161,7 @@ export default {
             return this.todo.star || this.todo.urgent || this.todo.archived;
         },
         isVisible() {
-            return isNodeVisible(this.todo, this.store.settings);
+            return this.archiveMode || isNodeVisible(this.todo, this.store.settings);
         },
     },
     methods: {

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
     AUTO_LAYOUT, autoLayout, computeListProgress, createNode, DATA_VERSION, findNode, findPath,
-    isEffectivelyArchived, isNodeVisible, mergeVisibleOrder, migrateToV2, normalizeNode, setArchived,
+    containsArchived, countArchived, hasArchivedContent, isEffectivelyArchived, isNodeVisible,
+    mergeVisibleOrder, migrateToV2, normalizeNode, pruneLive, setArchived,
 } from './tree.js';
 import { templateTodos } from './consts.js';
 
@@ -94,6 +95,47 @@ describe('archiving', () => {
     });
 });
 
+describe('archive content helpers', () => {
+    function tree() {
+        const t = sampleTree();
+        findNode(t, 'p1').archived = true;
+        findNode(t, 'history').archived = false;
+        return t;
+    }
+
+    it('finds archived content anywhere below a node', () => {
+        const t = tree();
+        expect(containsArchived(findNode(t, 'home'))).toBe(true);
+        expect(containsArchived(findNode(t, 'math'))).toBe(false);
+        expect(hasArchivedContent(findNode(t, 'groceries'))).toBe(false);
+        findNode(t, 'groceries').archived = true;
+        expect(hasArchivedContent(findNode(t, 'groceries'))).toBe(true);
+    });
+
+    it('counts archived nodes without double counting inside archived lists', () => {
+        const t = tree();
+        expect(countArchived(findNode(t, 'home'))).toBe(1);
+        findNode(t, 'history').archived = true;
+        expect(countArchived(findNode(t, 'home'))).toBe(1);
+        findNode(t, 'm2').archived = true;
+        expect(countArchived(findNode(t, 'home'))).toBe(2);
+    });
+
+    it('pruneLive keeps archived items and the lists that hold them', () => {
+        const t = tree();
+        findNode(t, 'm1').archived = true;
+        const home = pruneLive(findNode(t, 'home'));
+        expect(home.todos.map(n => n.id)).toEqual(['math', 'history']);
+        expect(findNode(t, 'math').todos.map(n => n.id)).toEqual(['m1']);
+        expect(findNode(t, 'history').todos.map(n => n.id)).toEqual(['presentation']);
+        expect(findNode(t, 'presentation').todos.map(n => n.id)).toEqual(['p1']);
+    });
+
+    it('pruneLive empties a list without archived content', () => {
+        expect(pruneLive(findNode(sampleTree(), 'groceries')).todos).toEqual([]);
+    });
+});
+
 describe('isNodeVisible', () => {
     it('hides archived and done nodes by default', () => {
         expect(isNodeVisible(task('a'), {})).toBe(true);
@@ -103,9 +145,9 @@ describe('isNodeVisible', () => {
         expect(isNodeVisible(task('a', { done: 0.5 }), {})).toBe(true);
     });
 
-    it('shows them when the settings say so', () => {
-        expect(isNodeVisible(task('a', { archived: true }), { showArchived: true })).toBe(true);
+    it('shows done nodes when the settings say so, but never archived ones', () => {
         expect(isNodeVisible(task('a', { done: 1 }), { showDone: true })).toBe(true);
+        expect(isNodeVisible(task('a', { archived: true }), { showDone: true, showArchived: true })).toBe(false);
     });
 });
 

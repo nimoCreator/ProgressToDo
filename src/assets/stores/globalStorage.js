@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import {
-    DATA_VERSION, defaultViewport, doneValue, isNodeVisible, migrateToV2, prepareTopLevel, walkTree,
+    countArchived, DATA_VERSION, defaultViewport, hasArchivedContent, doneValue, isNodeVisible, migrateToV2, prepareTopLevel, walkTree,
 } from '@/assets/js/tree.js';
 
 const STORAGE_KEY = 'progressToDo:v2';
@@ -20,7 +20,6 @@ export const useTodosStore = defineStore('todos', {
         todos: [],
         viewport: defaultViewport(),
         settings: {
-            showArchived: false,
             showBattlePass: false,
             showAiAssist: false,
             showDone: false,
@@ -31,20 +30,27 @@ export const useTodosStore = defineStore('todos', {
     getters: {
         visibleTodos: (s) => s.todos.filter(t => isNodeVisible(t, s.settings)),
 
+        // Every node, with parentName and whether it (or a list above it) is archived.
         flattenedTodos: (s) => {
             const out = [];
-            walkTree(s.todos, (t, parent) => {
+            walkTree(s.todos, (t, parent, ancestors) => {
                 const copy = { ...t };
                 if (parent?.text) copy.parentName = parent.text;
+                copy.effectivelyArchived = !!t.archived || ancestors.some(a => a.archived);
                 out.push(copy);
             });
             return out;
         },
+        liveFlattenedTodos: (s) => s.flattenedTodos.filter(t => !t.effectivelyArchived),
+
+        // Top-level lists shown in the archive view.
+        archiveLists: (s) => s.todos.filter(hasArchivedContent),
+        archivedCount: (s) => s.todos.reduce((sum, t) => sum + (t.archived ? 1 : countArchived(t)), 0),
 
         topZ: (s) => s.todos.reduce((max, t) => Math.max(max, Number.isFinite(t.z) ? t.z : 0), 0),
 
-        flattenedStarredTodos: (s) => s.flattenedTodos.filter(t => t.star),
-        flattenedUrgentTodos: (s) => s.flattenedTodos.filter(t => t.urgent),
+        flattenedStarredTodos: (s) => s.liveFlattenedTodos.filter(t => t.star),
+        flattenedUrgentTodos: (s) => s.liveFlattenedTodos.filter(t => t.urgent),
 
         doneWeightedCount: (s) =>
             s.flattenedTodos.reduce((acc, t) => acc + (Number.isFinite(+t.weight) ? +t.weight : 1) * doneValue(t), 0),
@@ -70,14 +76,12 @@ export const useTodosStore = defineStore('todos', {
         // Replaces the whole board (demo, CSV import); missing fields and positions are filled in.
         replaceTodos(lists) { this.todos = prepareTopLevel(lists); },
 
-        toggleShowArchived() { this.settings.showArchived = !this.settings.showArchived; },
         toggleShowDone() { this.settings.showDone = !this.settings.showDone; },
         toggleBattlePass() { this.settings.showBattlePass = !this.settings.showBattlePass; },
 
         clearAll() {
             this.todos = [];
             this.viewport = defaultViewport();
-            this.settings.showArchived = false;
             this.settings.showBattlePass = false;
             this.settings.showDone = false;
         },

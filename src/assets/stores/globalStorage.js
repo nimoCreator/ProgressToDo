@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia';
+import {
+    DATA_VERSION, defaultViewport, doneValue, isNodeVisible, migrateToV2, prepareTopLevel, walkTree,
+} from '@/assets/js/tree.js';
 
-const STORAGE_KEY = 'progressToDo:v1';
-const STORAGE_VERSION = 1;
+const STORAGE_KEY = 'progressToDo:v2';
+// v1 data is only read (for migration) and never overwritten, so it stays as a backup.
+const LEGACY_STORAGE_KEY = 'progressToDo:v1';
 
 function safeParse(s) { try { return JSON.parse(s); } catch { return null; } }
 function isStorageAvailable() {
@@ -11,31 +15,29 @@ function debounce(fn, wait = 200) { let t; return (...a) => { clearTimeout(t); t
 
 export const useTodosStore = defineStore('todos', {
     state: () => ({
-        _v: STORAGE_VERSION,
+        _v: DATA_VERSION,
+        // Top-level lists. Each has pos { x, y } and z for the board; nested lists live in .todos.
         todos: [],
+        viewport: defaultViewport(),
         settings: {
             showArchived: false,
             showBattlePass: false,
             showAiAssist: false,
             showDone: false,
+            lockLayout: false,
         },
     }),
 
     getters: {
-        visibleTodos: (s) =>
-            s.todos.filter(t => (s.settings.showArchived || !t.archived) && (s.settings.showDone || t.done < 1)),
+        visibleTodos: (s) => s.todos.filter(t => isNodeVisible(t, s.settings)),
 
         flattenedTodos: (s) => {
             const out = [];
-            const walk = (arr, parent = null) => {
-                for (const t of arr) {
-                    const copy = { ...t };
-                    if (parent?.name) copy.parentName = parent.name;
-                    out.push(copy);
-                    if (t.todos?.length) walk(t.todos, t);
-                }
-            };
-            walk(s.todos);
+            walkTree(s.todos, (t, parent) => {
+                const copy = { ...t };
+                if (parent?.text) copy.parentName = parent.text;
+                out.push(copy);
+            });
             return out;
         },
 
@@ -43,15 +45,21 @@ export const useTodosStore = defineStore('todos', {
         flattenedUrgentTodos: (s) => s.flattenedTodos.filter(t => t.urgent),
 
         doneWeightedCount: (s) =>
-            s.flattenedTodos.reduce((acc, t) => acc + (Number.isFinite(+t.weight) ? +t.weight : 1) * (t.done || 0), 0),
+            s.flattenedTodos.reduce((acc, t) => acc + (Number.isFinite(+t.weight) ? +t.weight : 1) * doneValue(t), 0),
 
         totalWeightedCount: (s) =>
             s.flattenedTodos.reduce((acc, t) => acc + (Number.isFinite(+t.weight) ? +t.weight : 1), 0),
     },
 
     actions: {
-        addTodo(newTodo) { this.todos.push(newTodo); },
+        addTodo(newTodo) {
+            this.todos.push(newTodo);
+            prepareTopLevel(this.todos);
+        },
         deleteToDo(index) { this.todos.splice(index, 1); },
+
+        // Replaces the whole board (demo, CSV import); missing fields and positions are filled in.
+        replaceTodos(lists) { this.todos = prepareTopLevel(lists); },
 
         toggleShowArchived() { this.settings.showArchived = !this.settings.showArchived; },
         toggleShowDone() { this.settings.showDone = !this.settings.showDone; },
@@ -59,6 +67,7 @@ export const useTodosStore = defineStore('todos', {
 
         clearAll() {
             this.todos = [];
+            this.viewport = defaultViewport();
             this.settings.showArchived = false;
             this.settings.showBattlePass = false;
             this.settings.showDone = false;
@@ -66,23 +75,22 @@ export const useTodosStore = defineStore('todos', {
 
         initFromStorage() {
             if (!isStorageAvailable()) return;
-            const raw = safeParse(localStorage.getItem(STORAGE_KEY));
-            if (!raw || typeof raw !== 'object') return;
-            // migration point (if future versions differ)
-            this._v = STORAGE_VERSION;
-            this.todos = Array.isArray(raw.todos) ? raw.todos : [];
-            const s = raw.settings || {};
-            this.settings.showArchived = !!s.showArchived;
-            this.settings.showBattlePass = !!s.showBattlePass;
-            this.settings.showAiAssist = !!s.showAiAssist;
-            this.settings.showDone = !!s.showDone;
+            const raw = safeParse(localStorage.getItem(STORAGE_KEY))
+                ?? safeParse(localStorage.getItem(LEGACY_STORAGE_KEY));
+            const data = migrateToV2(raw);
+            if (!data) return;
+            this._v = data._v;
+            this.todos = data.todos;
+            this.viewport = data.viewport;
+            Object.assign(this.settings, data.settings);
         },
 
         persistNow() {
             if (!isStorageAvailable()) return;
             const payload = JSON.stringify({
-                _v: STORAGE_VERSION,
+                _v: DATA_VERSION,
                 todos: this.todos,
+                viewport: this.viewport,
                 settings: this.settings,
             });
             try { localStorage.setItem(STORAGE_KEY, payload); }

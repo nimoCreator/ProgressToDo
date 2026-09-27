@@ -91,6 +91,7 @@
 
 <script>
 
+import { isNodeVisible, setArchived } from '@/assets/js/tree.js';
 import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import NameIcon from '../svg/NameIcon.vue';
 import nimoColorPicker from './nimoColorPicker.vue';
@@ -136,11 +137,7 @@ export default {
             return contrastColorFromRgbLike(this.todo.color ? this.todo.color : this.parentColor);
         },
         isVisible() {
-            const s = this.store.settings;
-            const passArchived = s.showArchived || !this.todo.archived;
-            const doneVal = Number.isFinite(+this.todo.done) ? +this.todo.done : (this.todo.done ? 1 : 0);
-            const passDone = s.showDone || doneVal < 1;
-            return passArchived && passDone;
+            return isNodeVisible(this.todo, this.store.settings);
         },
     },
     methods: {
@@ -179,7 +176,7 @@ export default {
             this.todo.urgent = !this.todo.urgent;
         },
         toggleArchived() {
-            this.todo.archived = !this.todo.archived;
+            setArchived(this.todo, !this.todo.archived);
         },
         openColorPallete(event) {
             event.stopPropagation();

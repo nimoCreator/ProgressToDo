@@ -101,6 +101,7 @@
 
 <script scoped>
 
+import { isNodeVisible, setArchived } from '@/assets/js/tree.js';
 import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import nimoColorPicker from "@/assets/components/nimoColorPicker.vue";
 
@@ -142,11 +143,7 @@ export default {
             return this.todo.star || this.todo.urgent || this.todo.archived;
         },
         isVisible() {
-            const s = this.store.settings;
-            const passArchived = s.showArchived || !this.todo.archived;
-            const doneVal = Number.isFinite(+this.todo.done) ? +this.todo.done : (this.todo.done ? 1 : 0);
-            const passDone = s.showDone || doneVal < 1;
-            return passArchived && passDone;
+            return isNodeVisible(this.todo, this.store.settings);
         },
     },
     methods: {
@@ -179,7 +176,7 @@ export default {
             this.todo.urgent = !this.todo.urgent;
         },
         toggleArchived() {
-            this.todo.archived = !this.todo.archived;
+            setArchived(this.todo, !this.todo.archived);
         },
         openColorPallete(event) {
             event.stopPropagation();

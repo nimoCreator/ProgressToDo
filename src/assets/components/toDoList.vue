@@ -143,7 +143,7 @@
                 :filter="'.menu, .colorPallete, input, button, .v3-emoji-picker'" :prevent-on-filter="false">
                 <template #item="{ element, index }">
                     <component
-                        v-if="isVisibleChild(element)"
+                        v-show="isVisibleChild(element)"
                         :is="element.component"
                         v-model="todo.todos[index]"
                         @deleteToDo="deleteElement(index)"
@@ -166,6 +166,7 @@ import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import Draggable from 'vuedraggable';
 
 import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
+import { computeListProgress, createNode, isNodeVisible, setArchived } from '@/assets/js/tree.js';
 
 
 export default {
@@ -209,83 +210,14 @@ export default {
     },
     methods: {
         addCheckBoxToDo() {
-            this.todo.todos.push({
-                id: this.generateUniqueId(),
-
-                type: 'checkbox',
-                component: 'checkBoxToDo',
-
-                created: new Date(),
-                modified: new Date(),
-                emoji: '',
-                text: '',
-                done: 0,
-                weight: 1,
-
-                dateStart: new Date().toISOString().slice(0, 16),
-                dateEnd: new Date(Date.now() + 86400000).toISOString().slice(0, 16), // 24h later
-
-                star: false,
-                urgent: false,
-                archived: false,
-
-                color: null,
-
-            });
+            this.todo.todos.push(createNode('checkbox'));
         },
         addBarToDo() {
-            this.todo.todos.push({
-                id: this.generateUniqueId(),
-
-                type: 'bar',
-                component: 'barToDo',
-                
-                created: new Date(),
-                modified: new Date(),
-                emoji: '',
-                text: '',
-                done: 0,
-                weight: 1,
-
-                dateStart: new Date().toISOString().slice(0, 16),
-                dateEnd: new Date(Date.now() + 86400000).toISOString().slice(0, 16), // 24h later
-
-                star: false,
-                urgent: false,
-                archived: false,
-
-                color: null,
-            });
+            this.todo.todos.push(createNode('bar'));
         },
         addToDoList() {
-            this.todo.todos.push({
-                id: this.generateUniqueId(),
-
-                type: 'list',
-                component: 'toDoList',
-
-                created: new Date(),
-                modified: new Date(),
-                emoji: '📝',
-                text: '',
-                todos: [],
-                done: 0,
-                weight: 1,
-                progressBinary: false,
-                progressVisable: false,
-                countdownVisable: false,
-
-                dateStart: new Date().toISOString().slice(0, 16),
-                dateEnd: new Date(Date.now() + 86400000).toISOString().slice(0, 16), // 24h later
-
-                star: false,
-                urgent: false,
-                archived: false,
-
-                color: null,
-            });
+            this.todo.todos.push(createNode('list'));
         },
-
 
         clearToDoList() {
             this.todo.todos = [];
@@ -317,7 +249,7 @@ export default {
             this.todo.urgent = !this.todo.urgent;
         },
         toggleArchived() {
-            this.todo.archived = !this.todo.archived;
+            setArchived(this.todo, !this.todo.archived);
         },
         openColorPallete(event) {
             event.stopPropagation();
@@ -347,29 +279,11 @@ export default {
         },
 
         updateProgress() {
-            let totalWeight = this.todo.todos.reduce((sum, todo) => sum + todo.weight, 0);
-            let completedWeight = 0;
-            if (this.todo.progressBinary) {
-                completedWeight = this.todo.todos
-                    .filter(todo => todo.done >= 1)
-                    .reduce((sum, todo) => sum + todo.weight, 0);
-            }
-            else {
-                completedWeight = this.todo.todos
-                    .reduce((sum, todo) => sum + todo.weight * todo.done, 0);
-            }
-            if (totalWeight === 0) {
-                this.progressPercentage = "0%";
-                this.toDoDone = 0;
-                this.toDoCount = 0;
-                this.todo.done = 0;
-            }
-            else {
-                this.progressPercentage = `${Math.round((completedWeight / totalWeight) * 100)}%`;
-                this.toDoDone = this.todo.todos.filter(todo => todo.done).length;
-                this.toDoCount = this.todo.todos.length;
-                this.todo.done = (completedWeight / totalWeight);
-            }
+            const { done, doneCount, count } = computeListProgress(this.todo);
+            this.progressPercentage = `${Math.round(done * 100)}%`;
+            this.toDoDone = doneCount;
+            this.toDoCount = count;
+            this.todo.done = done;
         },
 
         updateCountdown() {
@@ -443,11 +357,7 @@ export default {
         },
 
         isVisibleChild(t) {
-            const s = this.store?.settings ?? { showArchived:false, showDone:false };
-            const passArchived = s.showArchived || !t.archived;
-            const doneVal = Number.isFinite(+t.done) ? +t.done : 0;
-            const passDone = s.showDone || doneVal < 1;
-            return passArchived && passDone;
+            return isNodeVisible(t, this.store.settings);
         },
     },
     mounted() {

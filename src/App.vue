@@ -235,6 +235,7 @@ import { appVersion, releaseDate } from "./assets/js/consts";
 import Favicon from "./assets/svg/Favicon.vue";
 import nimoIcon from "./assets/svg/nimoIcon.vue";
 import { templateTodos } from "./assets/js/consts.js";
+import { createNode, mergeVisibleOrder } from "@/assets/js/tree.js";
 import BattlePass from "@/assets/components/BattlePass.vue";
 
 import Draggable from 'vuedraggable'
@@ -246,7 +247,6 @@ export default {
     Favicon,
     nimoIcon,
     AiSuggestion,
-    templateTodos,
     Draggable,
     BattlePass
   },
@@ -269,33 +269,7 @@ export default {
   },
   methods: {
     addTodo() {
-      this.store.addTodo({
-        id: this.generateUniqueId(),
-
-        type: 'list',
-        component: 'toDoList',
-
-        created: new Date().toISOString().slice(0, 16),
-        modified: new Date().toISOString().slice(0, 16),
-        emoji: '📝',
-        text: '',
-        todos: [],
-        done: 0,
-        weight: 1,
-        progressBinary: false,
-        progressVisable: false,
-        countdownVisable: false,
-
-        dateStart: new Date().toISOString().slice(0, 16),
-        dateEnd: new Date(Date.now() + 86400000).toISOString().slice(0, 16), // 24h later
-
-        star: false,
-        urgent: false,
-        archived: false,
-
-        color: null,
-      });
-      this.updateLocalStorage();
+      this.store.addTodo(createNode('list'));
     },
 
 // #region LOCALSTORAGE 
@@ -342,7 +316,7 @@ export default {
       navigator.clipboard.readText().then((text) => {
         try {
           const parsedTodos = JSON.parse(text);
-          this.store.todos = parsedTodos;
+          this.store.replaceTodos(parsedTodos);
           this.store.persistNow();
           alert("Todos pasted from clipboard!");
         } catch (error) {
@@ -439,7 +413,7 @@ export default {
       return flattened;
     },
     LoadDemo() {
-      this.store.todos = JSON.parse(JSON.stringify(templateTodos));
+      this.store.replaceTodos(JSON.parse(JSON.stringify(templateTodos)));
       this.store.persistNow();
 
       this.closeAllModals()
@@ -447,10 +421,7 @@ export default {
     clamp01(x) { return Math.max(0, Math.min(1, x)); },
 
     reorderVisibleTodos(nextVisible) {
-      const visibleIds = new Set(nextVisible.map(t => t.id));
-      let i = 0;
-      const newTodos = this.store.todos.map(t => visibleIds.has(t.id) ? nextVisible[i++] : t);
-      this.store.todos = newTodos;
+      this.store.todos = mergeVisibleOrder(this.store.todos, nextVisible);
     },
 
     /* #region CSV */
@@ -605,7 +576,7 @@ export default {
         }
         const tree = this.rebuildTodosFromCSV(rows);
         if (this.store) {
-          this.store.todos = tree;
+          this.store.replaceTodos(tree);
           this.store.persistNow?.();
         } else {
           this.todos = tree;

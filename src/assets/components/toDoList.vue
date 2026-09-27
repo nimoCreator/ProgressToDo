@@ -15,6 +15,9 @@
                     <div v-if="todo.archived" class="medal archivedMedal">
                         <span class="material-symbols-rounded icon fill">inventory_2</span>
                     </div>
+                    <div v-if="isTopLevel && todo.locked" class="medal lockedMedal" title="Position locked">
+                        <span class="material-symbols-rounded icon fill">lock</span>
+                    </div>
                 </div>
 
                 <div class="emoji" @click="toggleEmojiPicker"> {{ todo.emoji || '📝' }} </div>
@@ -23,6 +26,17 @@
                 <div class="menu" @click.stop="toggleMenu">
                     <span class="menuOpenButton"> ... </span>
                     <div class="buttons" :class="{ show: showMenu }">
+                        <template v-if="isTopLevel">
+                            <div class="divider">
+                                <span>board</span>
+                                <div class="horizontalLine"></div>
+                            </div>
+                            <button class="lock" @click.stop="toggleLocked" :class="{ fill: todo.locked }">
+                                <span class="material-symbols-rounded icon" :class="{ fill: todo.locked }">{{ todo.locked ? 'lock' : 'lock_open' }}</span>
+                                <span class="buttonLabel"> {{ todo.locked ? "Unlock Position" : "Lock Position" }} </span>
+                            </button>
+                        </template>
+
                         <div class="divider">
                             <span>add</span>
                             <div class="horizontalLine"></div>
@@ -206,6 +220,11 @@ export default {
         parentColor: {
             type: String,
             default: '#00aaff'
+        },
+        // Lists placed directly on the board can lock their position there; nested lists cannot.
+        isTopLevel: {
+            type: Boolean,
+            default: false
         }
     },
     methods: {
@@ -247,6 +266,9 @@ export default {
         },
         toggleUrgent() {
             this.todo.urgent = !this.todo.urgent;
+        },
+        toggleLocked() {
+            this.todo.locked = !this.todo.locked;
         },
         toggleArchived() {
             setArchived(this.todo, !this.todo.archived);
@@ -407,7 +429,7 @@ export default {
             }
         },
         anyMedal() {
-            return this.todo.star || this.todo.urgent || this.todo.archived;
+            return this.todo.star || this.todo.urgent || this.todo.archived || (this.isTopLevel && this.todo.locked);
         },
         contrastColor() {
             let color = this.todo.color ? this.todo.color : this.parentColor;

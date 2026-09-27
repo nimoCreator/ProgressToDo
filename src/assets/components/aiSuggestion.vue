@@ -70,6 +70,7 @@
 
 import TaskChip from "./TaskChip.vue";
 import { useTodosStore } from '@/assets/stores/globalStorage.js';
+import { focusTodo } from '@/assets/js/board.js';
 
 export default {
     name: "AiSuggestion",
@@ -202,17 +203,7 @@ export default {
             return Math.max(0, 1 - diff / focusRange);
         },
         scrollToItem(id) {
-            this.$nextTick(() => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    element.classList.add('highlight-item');
-                    setTimeout(() => {
-                        element.classList.remove('highlight-item');
-                    }, 2000);
-                    this.closeAllModals();
-                }
-            });
+            focusTodo(id);
         },
     },
     mounted() {

@@ -41,6 +41,8 @@ export const useTodosStore = defineStore('todos', {
             return out;
         },
 
+        topZ: (s) => s.todos.reduce((max, t) => Math.max(max, Number.isFinite(t.z) ? t.z : 0), 0),
+
         flattenedStarredTodos: (s) => s.flattenedTodos.filter(t => t.star),
         flattenedUrgentTodos: (s) => s.flattenedTodos.filter(t => t.urgent),
 
@@ -53,8 +55,15 @@ export const useTodosStore = defineStore('todos', {
 
     actions: {
         addTodo(newTodo) {
+            newTodo.z = this.topZ + 1;
             this.todos.push(newTodo);
             prepareTopLevel(this.todos);
+        },
+        // Raises a top-level list above all others on the board.
+        bringToFront(id) {
+            const list = this.todos.find(t => t.id === id);
+            if (!list || list.z === this.topZ && this.todos.filter(t => t.z === list.z).length === 1) return;
+            list.z = this.topZ + 1;
         },
         deleteToDo(index) { this.todos.splice(index, 1); },
 

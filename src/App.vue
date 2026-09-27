@@ -24,6 +24,11 @@
           <span class="buttonLabel"> {{ showArchived ? "Hide" : "Show" }} Archived </span>
         </button>
 
+        <button class="lockLayout" @click.stop="toggleLockLayout" :class="{ fill: lockLayout }">
+          <span class="material-symbols-rounded icon" :class="{ fill: lockLayout }">{{ lockLayout ? 'lock' : 'lock_open' }}</span>
+          <span class="buttonLabel"> {{ lockLayout ? "Unlock" : "Lock" }} Layout </span>
+        </button>
+
         <button class="done" @click.stop="toggleShowDone" :class="{ fill: showDone }">
           <span class="material-symbols-rounded icon" :class="{ fill: showDone }">check_box</span>
           <span class="buttonLabel"> {{ showDone ? "Hide" : "Show" }} Done </span>
@@ -81,37 +86,38 @@
       </div>
     </div>
 
-    <div id="gridPanel">
+    <BoardCanvas ref="board" :viewport="store.viewport">
+      <CanvasItem v-for="list in visibleTodos" :key="list.id" :item="list"
+        :locked="list.locked || store.settings.lockLayout" @front="store.bringToFront(list.id)">
+        <toDoList :modelValue="list" isTopLevel @deleteToDo="deleteToDoById(list.id)" />
+      </CanvasItem>
+    </BoardCanvas>
 
+    <div class="hudTop" v-if="showBattlePass || showAiAssist" @click.stop>
       <BattlePass :doneCount="doneWeightedCount" :totalCount="totalWeightedCount" v-if="showBattlePass" />
+      <AiSuggestion v-if="showAiAssist" />
+    </div>
 
-      <AiSuggestion  v-if="showAiAssist" />
-
-      <Draggable v-model="visibleTodosModel" class="draggables" item-key="id" handle=".dragHandleList"
-        :animation="200" :ghost-class="'drag-ghost'">
-        <template #item="{ element, index }">
-          <toDoList :key="element.id" v-model="visibleTodosModel[index]" @deleteToDo="deleteToDoById(element.id)" />
-        </template>
-      </Draggable>
-
-      <div class="emptyState" v-if="visibleTodos.length === 0">
-        <p class="inlineTooltipBig">No todos found</p>
-        <p class="inlineTooltip">Click the plus icon below to add a new todo!</p>
-        <div class="flexRowOr">
-          <hr />or
-          <hr />
-        </div>
-        <button @click="LoadDemo">Click here to load the Demo!</button>
-      </div>
+    <div class="emptyState" v-if="visibleTodos.length === 0" @click.stop>
+      <p class="inlineTooltipBig">No todos found</p>
+      <p class="inlineTooltip">Add a new list, or start from the demo.</p>
       <button @click="addTodo" class="addTodo">
         <span class="material-symbols-rounded icon fill">add</span>
       </button>
+      <div class="flexRowOr">
+        <hr />or
+        <hr />
+      </div>
+      <button @click="LoadDemo">Click here to load the Demo!</button>
     </div>
 
-    <div class="mainButtons">
-      <button @click="scrollTop" class="scrollTop">
-        <span class="material-symbols-rounded icon fill">arrow_upward</span>
+    <div class="mainButtons" @click.stop>
+      <button @click="addTodo" class="newList" title="New list">
+        <span class="material-symbols-rounded icon fill">add</span>
+        <span class="buttonLabel">New list</span>
       </button>
+      <ZoomControls :zoom="store.viewport.zoom" @zoomIn="$refs.board.zoomBy(1.25)"
+        @zoomOut="$refs.board.zoomBy(0.8)" @reset="$refs.board.resetZoom()" @fit="$refs.board.fitAll()" />
     </div>
 
     <div id="modals" v-if="showModals" @click="closeAllModals">
@@ -235,10 +241,12 @@ import { appVersion, releaseDate } from "./assets/js/consts";
 import Favicon from "./assets/svg/Favicon.vue";
 import nimoIcon from "./assets/svg/nimoIcon.vue";
 import { templateTodos } from "./assets/js/consts.js";
-import { createNode, mergeVisibleOrder } from "@/assets/js/tree.js";
+import { createNode } from "@/assets/js/tree.js";
+import { focusTodo, snapToGrid } from "@/assets/js/board.js";
 import BattlePass from "@/assets/components/BattlePass.vue";
-
-import Draggable from 'vuedraggable'
+import BoardCanvas from "@/assets/components/BoardCanvas.vue";
+import CanvasItem from "@/assets/components/CanvasItem.vue";
+import ZoomControls from "@/assets/components/ZoomControls.vue";
 
 export default {
   name: "App",
@@ -247,8 +255,10 @@ export default {
     Favicon,
     nimoIcon,
     AiSuggestion,
-    Draggable,
-    BattlePass
+    BattlePass,
+    BoardCanvas,
+    CanvasItem,
+    ZoomControls,
   },
   setup() {
     const store = useTodosStore();
@@ -268,8 +278,15 @@ export default {
     };
   },
   methods: {
+    // New lists appear in the middle of the current view (cascading if that spot is taken).
     addTodo() {
-      this.store.addTodo(createNode('list'));
+      const center = this.$refs.board.viewCenter();
+      const pos = { x: snapToGrid(center.x - 200), y: snapToGrid(center.y - 120) };
+      while (this.store.todos.some(t => t.pos && t.pos.x === pos.x && t.pos.y === pos.y)) {
+        pos.x += 32;
+        pos.y += 32;
+      }
+      this.store.addTodo(createNode('list', { pos }));
     },
 
 // #region LOCALSTORAGE 
@@ -290,12 +307,6 @@ export default {
 
 // #endregion LOCALSTORAGE 
 
-    scrollTop() {
-      document.querySelector("html").scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    },
     toggleMenu() {
       this.showMenu = !this.showMenu;
     },
@@ -329,6 +340,9 @@ export default {
     },
     toggleShowDone() {
       this.store.toggleShowDone();
+    },
+    toggleLockLayout() {
+      this.store.settings.lockLayout = !this.store.settings.lockLayout;
     },
     toggleBattlePass() {
       if(!this.showBattlePass) 
@@ -384,17 +398,8 @@ export default {
       }
     },
     scrollToItem(id) {
-      this.$nextTick(() => {
-        const element = document.getElementById(id);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          element.classList.add('highlight-item');
-          setTimeout(() => {
-            element.classList.remove('highlight-item');
-          }, 2000);
-          this.closeAllModals();
-        }
-      });
+      focusTodo(id);
+      this.closeAllModals();
     },
     flattenTodos(todos, parent = null) {
       let flattened = [];
@@ -417,12 +422,9 @@ export default {
       this.store.persistNow();
 
       this.closeAllModals()
+      this.$nextTick(() => this.$refs.board.fitAll({ animate: false }));
     },
     clamp01(x) { return Math.max(0, Math.min(1, x)); },
-
-    reorderVisibleTodos(nextVisible) {
-      this.store.todos = mergeVisibleOrder(this.store.todos, nextVisible);
-    },
 
     /* #region CSV */
 
@@ -678,13 +680,10 @@ export default {
     todos: { get() { return this.store.todos; } },
     showArchived: { get() { return this.store.settings.showArchived; } },
     showDone: { get() { return this.store.settings.showDone; } },
+    lockLayout() { return this.store.settings.lockLayout; },
     showBattlePass: { get() { return this.store.settings.showBattlePass; } },
     showAiAssist: { get() { return this.store.settings.showAiAssist; } },
     visibleTodos() { return this.store.visibleTodos; },
-    visibleTodosModel: {
-      get() { return this.store.visibleTodos; },
-      set(nextVisible) { this.reorderVisibleTodos(nextVisible); }
-    },
     flattenedTodos() { return this.store.flattenedTodos; },
     flattenedStarredTodos() { return this.store.flattenedStarredTodos; },
     flattenedUrgentTodos() { return this.store.flattenedUrgentTodos; },
@@ -692,6 +691,11 @@ export default {
     totalWeightedCount() { return this.store.totalWeightedCount; },
   },
   mounted() {
+    // First visit (or untouched view): show every list instead of the world origin.
+    const v = this.store.viewport;
+    if (v.x === 0 && v.y === 0 && v.zoom === 1 && this.visibleTodos.length) {
+      this.$nextTick(() => this.$refs.board.fitAll({ animate: false }));
+    }
     document.addEventListener('keydown', this.handleEscape);
     document.addEventListener("click", this.handleClickOutside);
   },
@@ -744,22 +748,22 @@ export default {
   position: fixed;
   bottom: 1rem;
   right: 1rem;
+  z-index: 20;
+
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.mainButtons>* {
+.mainButtons .newList {
   display: flex;
-  justify-content: center;
   align-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-}
-
-.mainButtons .icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  gap: 0.25rem;
+  height: 2.75rem;
+  padding: 0 0.875rem 0 0.625rem;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
 }
 
 #menu {
@@ -946,6 +950,13 @@ export default {
 }
 
 .emptyState {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  max-width: calc(100vw - 2rem);
+
   padding: 2rem 1rem;
   text-align: center;
   color: #7c8187;

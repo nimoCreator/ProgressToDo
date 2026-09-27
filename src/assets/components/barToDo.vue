@@ -38,7 +38,8 @@
         </label>
         <div class="menu" v-if="hasMenu" @click="toggleMenu">
             <span class="menuOpenButton"> ... </span>
-            <div class="buttons" :class="{ show: showMenu }">
+            <ContextMenu v-if="showMenu" :anchorId="todo.id" :owner="todo.id" kind="bar">
+            <div class="buttons show">
                 <template v-if="!archiveMode">
                 <div class="divider">
                     <span>modify</span>
@@ -102,6 +103,7 @@
                     </button>
                 </template>
             </div>
+            </ContextMenu>
         </div>
     </div>
 </template>
@@ -113,12 +115,15 @@ import archiveMode from '@/assets/js/archiveMode.js';
 import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import NameIcon from '../svg/NameIcon.vue';
 import nimoColorPicker from './nimoColorPicker.vue';
+import ContextMenu from '@/assets/components/ContextMenu.vue';
+import contextMenuHost from '@/assets/js/contextMenuHost.js';
 import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
 
 export default {
     name: 'barToDo',
-    mixins: [archiveMode],
+    mixins: [archiveMode, contextMenuHost],
     components: {
+        ContextMenu,
         NameIcon,
         nimoColorPicker,
     },
@@ -174,10 +179,7 @@ export default {
             }
         },
         handleClickOutside(event) {
-            // Skip closing if clicked inside the color palette
-            if (this.$el.contains(event.target) && event.target.closest('.colorPallete')) {
-                return;
-            }
+            if (this.isInsideOwnMenu(event.target)) return;
 
             // Otherwise proceed with normal outside click handling
             if (!this.$el.contains(event.target)) {
@@ -207,13 +209,7 @@ export default {
         },
     },
     mounted() {
-        document.addEventListener('click', this.handleClickOutside);
-        document.addEventListener('keydown', this.handleEscape);
         this.adjustWidth({ target: { value: this.todo.text } });
-    },
-    beforeUnmount() {
-        document.removeEventListener('click', this.handleClickOutside);
-        document.removeEventListener('keydown', this.handleEscape);
     },
 }
 </script>

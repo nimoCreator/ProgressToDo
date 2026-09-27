@@ -20,6 +20,17 @@ Update v0.2.0
 - Changed the copied data from JSON to CSV, cutting the size of average todolist in half!
 - FIX: made all components use the same [ name / label / text ]
 
+Update v3.0.0
+- Top-level lists live on an infinite board: drag them anywhere, pan by dragging the background or scrolling, zoom with Ctrl + scroll or pinch (25%-200%), zoom controls and "fit all"
+- Lock Position for a list on the board, and Lock Layout for all lists; tasks can still be moved in and out of locked lists
+- Tasks keep drag and drop within a list and between lists at any zoom; the board pans automatically near the screen edge while dragging
+- Archive view: shows every list that holds archived items, archived items at full opacity and the rest of the list dimmed for context; restore or permanently delete from there
+- Archived items no longer count towards list progress and are hidden from the board, Starred, Urgent and AI Assist
+- Menus open next to their item without covering it and always stay on screen; drag a menu by its handle and drop it next to the item to pin menus of that kind there
+- CSV backup now also stores board positions, locks and archive dates (older files still import)
+- Data is migrated automatically from the previous version; the old data is kept as a backup
+- FIX: adding a list threw an error, Starred/Urgent never showed the parent list name, AI Assist "go to" threw an error
+
 
 
 * FUTURE IDEAS *

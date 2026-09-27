@@ -207,6 +207,10 @@ export function autoLayout(lists, layout = AUTO_LAYOUT) {
     return lists;
 }
 
+export function defaultMenuSnap() {
+    return { list: 'auto', checkbox: 'auto', bar: 'auto' };
+}
+
 export function defaultViewport() {
     return { x: 0, y: 0, zoom: 1 };
 }
@@ -231,6 +235,7 @@ export function migrateToV2(raw) {
             showAiAssist: !!s.showAiAssist,
             showDone: !!s.showDone,
             lockLayout: !!s.lockLayout,
+            menuSnap: { ...defaultMenuSnap(), ...(s.menuSnap && typeof s.menuSnap === 'object' ? s.menuSnap : {}) },
         },
     };
 }

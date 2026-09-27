@@ -1,5 +1,5 @@
-export let appVersion = 'v0.2.0';
-export let releaseDate = '2025-09-01';
+export let appVersion = 'v3.0.0';
+export let releaseDate = '2026-09-27';
 
 function TodayPlus(days) {
     const today = new Date();

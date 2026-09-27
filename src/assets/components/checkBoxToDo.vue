@@ -47,7 +47,8 @@
         </div>
         <div class="menu" v-if="hasMenu" @click="toggleMenu">
             <span class="menuOpenButton"> ... </span>
-            <div class="buttons" :class="{ show: showMenu }">
+            <ContextMenu v-if="showMenu" :anchorId="todo.id" :owner="todo.id" kind="checkbox">
+            <div class="buttons show">
                 <template v-if="!archiveMode">
 
                 <div class="divider">
@@ -111,6 +112,7 @@
                 </template>
 
             </div>
+            </ContextMenu>
         </div>
     </div>
 </template>
@@ -121,11 +123,14 @@ import { isNodeVisible, setArchived } from '@/assets/js/tree.js';
 import archiveMode from '@/assets/js/archiveMode.js';
 import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import nimoColorPicker from "@/assets/components/nimoColorPicker.vue";
+import ContextMenu from '@/assets/components/ContextMenu.vue';
+import contextMenuHost from '@/assets/js/contextMenuHost.js';
 
 export default {
     name: 'checkBoxToDo',
-    mixins: [archiveMode],
+    mixins: [archiveMode, contextMenuHost],
     components: {
+        ContextMenu,
         nimoColorPicker,
     },
     setup() {
@@ -179,7 +184,7 @@ export default {
         },
         handleClickOutside(event) {
             const el = this.$el;
-            if (!el) return;
+            if (!el || this.isInsideOwnMenu(event.target)) return;
 
             const clickedOutside = !el.contains(event.target);
             if (clickedOutside) {
@@ -207,17 +212,6 @@ export default {
         toggleDone() {
             this.todo.done = !this.todo.done;
         },
-
-    },
-    mounted() {
-        document.addEventListener('click', this.handleClickOutside);
-        document.addEventListener('keydown', this.handleEscape);
-
-    },
-    beforeUnmount() {
-
-        document.removeEventListener('click', this.handleClickOutside);
-        document.removeEventListener('keydown', this.handleEscape);
 
     },
 }

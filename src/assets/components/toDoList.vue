@@ -26,7 +26,8 @@
                 <input type="text" class="toDoName" v-model="todo.text" :readonly="archiveMode">
                 <div class="menu" v-if="hasMenu" @click.stop="toggleMenu">
                     <span class="menuOpenButton"> ... </span>
-                    <div class="buttons" :class="{ show: showMenu }">
+                    <ContextMenu v-if="showMenu" :anchorId="todo.id" :owner="todo.id" kind="list">
+                    <div class="buttons show">
                         <template v-if="!archiveMode">
                         <template v-if="isTopLevel">
                             <div class="divider">
@@ -145,6 +146,7 @@
                             </button>
                         </template>
                     </div>
+                    </ContextMenu>
                 </div>
             </div>
             <div class="countdownContainer" v-if="todo.countdownVisable">
@@ -193,6 +195,8 @@ import barToDo from '@/assets/components/barToDo.vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import nimoColorPicker from '@/assets/components/nimoColorPicker.vue';
+import ContextMenu from '@/assets/components/ContextMenu.vue';
+import contextMenuHost from '@/assets/js/contextMenuHost.js';
 
 import { useTodosStore } from '@/assets/stores/globalStorage.js';
 import Draggable from 'vuedraggable';
@@ -204,8 +208,9 @@ import archiveMode from '@/assets/js/archiveMode.js';
 
 export default {
     name: 'ToDoList',
-    mixins: [archiveMode],
+    mixins: [archiveMode, contextMenuHost],
     components: {
+        ContextMenu,
         checkBoxToDo,
         EmojiPicker,
         barToDo,
@@ -307,6 +312,7 @@ export default {
             }
         },
         handleClickOutside(event) {
+            if (this.isInsideOwnMenu(event.target)) return;
             if (this.$el && !this.$el.contains(event.target)) {
                 this.showMenu = false;
                 this.showEmojiPicker = false;
@@ -408,13 +414,8 @@ export default {
         this.updateProgress();
         this.updateCountdown();
         this.countdownInterval = setInterval(this.updateCountdown, 1000);
-        document.addEventListener('keydown', this.handleEscape);
-        document.addEventListener('click', this.handleClickOutside);
     },
     beforeUnmount() {
-        document.removeEventListener('keydown', this.handleEscape);
-        document.removeEventListener('click', this.handleClickOutside);
-
         clearInterval(this.countdownInterval);
     },
     watch: {

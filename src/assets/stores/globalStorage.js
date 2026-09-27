@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import {
-    countArchived, DATA_VERSION, defaultViewport, hasArchivedContent, doneValue, isNodeVisible, migrateToV2, prepareTopLevel, walkTree,
+    countArchived, DATA_VERSION, defaultMenuSnap, defaultViewport, hasArchivedContent, doneValue, isNodeVisible, migrateToV2, prepareTopLevel, walkTree,
 } from '@/assets/js/tree.js';
 
 const STORAGE_KEY = 'progressToDo:v2';
@@ -24,6 +24,8 @@ export const useTodosStore = defineStore('todos', {
             showAiAssist: false,
             showDone: false,
             lockLayout: false,
+            // Side a context menu is pinned to, per item kind ('auto' = placed automatically).
+            menuSnap: defaultMenuSnap(),
         },
     }),
 

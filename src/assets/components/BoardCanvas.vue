@@ -14,7 +14,7 @@ import {
 } from '@/assets/js/board.js';
 
 // Elements that scroll on their own; wheel events inside them are left alone.
-const OWN_SCROLL = '.v3-emoji-picker, .colorPallete, textarea';
+const OWN_SCROLL = '.emojiPicker, .colorPallete, textarea';
 
 export default {
     name: 'BoardCanvas',
@@ -78,6 +78,12 @@ export default {
         itemRects() {
             return [...this.$refs.world.querySelectorAll(':scope > .canvasItem')].map(el => ({
                 x: el.offsetLeft, y: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight,
+            }));
+        },
+        // Rendered size of each top-level item, keyed by todo id (used to lay out a tidy grid).
+        itemSizes() {
+            return [...this.$refs.world.querySelectorAll(':scope > .canvasItem')].map(el => ({
+                id: el.firstElementChild?.id, width: el.offsetWidth, height: el.offsetHeight,
             }));
         },
         fitAll({ animate = true } = {}) {

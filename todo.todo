@@ -20,7 +20,21 @@ Update v0.2.0
 - Changed the copied data from JSON to CSV, cutting the size of average todolist in half!
 - FIX: made all components use the same [ name / label / text ]
 
-Update v3.0.0
+Update v0.4.0
+- Added a Calendar view: a full month grid, tasks created/due that day, and closest deadline / oldest tasks / overdue panels
+- Tasks no longer need a due date — one only counts toward the calendar once you actually set it
+- Added "Extract to Board" — pull a nested list out to stand on its own
+- Drag a list onto another list to nest it there (the reverse of Extract to Board)
+- Added "Arrange" to tidy every list into a grid with one click
+- Replaced the third-party emoji picker with our own, styled to match the color picker, with search and categories
+- Reworked every dropdown menu (main menu, and every list/checkbox/bar menu) for a more consistent look
+- Added an in-app Changelog (About > Changelog)
+- FIX: uploading a CSV backup could make the board crash on the next drag
+- FIX: the About logo rendered oversized in some places
+
+
+
+Update v0.3.0
 - Top-level lists live on an infinite board: drag them anywhere, pan by dragging the background or scrolling, zoom with Ctrl + scroll or pinch (25%-200%), zoom controls and "fit all"
 - Lock Position for a list on the board, and Lock Layout for all lists; tasks can still be moved in and out of locked lists
 - Tasks keep drag and drop within a list and between lists at any zoom; the board pans automatically near the screen edge while dragging
@@ -77,3 +91,5 @@ Polish & Extras:
 - Polish mobile UI
 - Add themes / light mode
 - Add app onboarding tips or tutorial
+
+...and more!!!

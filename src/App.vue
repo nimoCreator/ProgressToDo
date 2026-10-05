@@ -2,145 +2,101 @@
   <div id="appWrapper" @contextmenu.stop.prevent.exact="toggleMenu" @click="closeAllMenus">
     <div id="menu" class="menu" @click.stop="toggleMenu">
       <span class="menuOpenButton"> ... </span>
-      <div class="buttons" :class="{ show: showMenu }" @click.stop>
+      <SimpleMenu :show="showMenu" @click.stop>
 
-        <div class="divider">
-          <span>highlighted</span>
-          <div class="horizontalLine"></div>
-        </div>
+        <SimpleMenuDivider label="highlighted" />
 
-        <button class="star" @click.stop="openStarModal">
-          <span class="material-symbols-rounded icon fill">star</span>
-          <span class="buttonLabel"> Show Starred </span>
-        </button>
+        <SimpleButton class="star" icon="star" :active="true" label="Show Starred" @click.stop="openStarModal" />
+        <SimpleButton class="urgent" icon="mode_heat" :active="true" label="Show Urgent" @click.stop="openUrgentModal" />
+        <SimpleButton class="archived" icon="inventory_2" :active="showArchiveView"
+          :label="showArchiveView ? 'Back to Board' : 'Show Archive'" @click.stop="toggleArchiveView" />
+        <SimpleButton class="calendar" icon="calendar_month" :active="showCalendarView"
+          :label="showCalendarView ? 'Back to Board' : 'Show Calendar'" @click.stop="toggleCalendarView" />
+        <SimpleButton class="lockLayout" :icon="lockLayout ? 'lock' : 'lock_open'" :active="lockLayout"
+          :label="(lockLayout ? 'Unlock' : 'Lock') + ' Layout'" @click.stop="toggleLockLayout" />
+        <SimpleButton icon="check_box" :active="showDone" :label="(showDone ? 'Hide' : 'Show') + ' Done'"
+          @click.stop="toggleShowDone" />
+        <SimpleButton icon="strategy" :active="showBattlePass" :label="(showBattlePass ? 'Hide' : 'Show') + ' BattlePass'"
+          @click.stop="toggleBattlePass" />
+        <SimpleButton icon="cards_star" :active="showAiAssist" :label="(showAiAssist ? 'Hide' : 'Show') + ' AI Assist'"
+          @click.stop="toggleAiAssist" />
 
-        <button class="urgent" @click.stop="openUrgentModal">
-          <span class="material-symbols-rounded icon fill">mode_heat</span>
-          <span class="buttonLabel"> Show Urgent </span>
-        </button>
+        <SimpleMenuDivider label="data" />
 
-        <button class="archived" @click.stop="toggleArchiveView" :class="{ fill: showArchiveView }">
-          <span class="material-symbols-rounded icon" :class="{ fill: showArchiveView }">inventory_2</span>
-          <span class="buttonLabel"> {{ showArchiveView ? "Back to Board" : "Show Archive" }} </span>
-        </button>
-
-        <button class="lockLayout" @click.stop="toggleLockLayout" :class="{ fill: lockLayout }">
-          <span class="material-symbols-rounded icon" :class="{ fill: lockLayout }">{{ lockLayout ? 'lock' : 'lock_open' }}</span>
-          <span class="buttonLabel"> {{ lockLayout ? "Unlock" : "Lock" }} Layout </span>
-        </button>
-
-        <button class="done" @click.stop="toggleShowDone" :class="{ fill: showDone }">
-          <span class="material-symbols-rounded icon" :class="{ fill: showDone }">check_box</span>
-          <span class="buttonLabel"> {{ showDone ? "Hide" : "Show" }} Done </span>
-        </button>
-
-        <button class="done" @click.stop="toggleBattlePass" :class="{ fill: showBattlePass }">
-          <span class="material-symbols-rounded icon" :class="{ fill: showBattlePass }">strategy</span>
-          <span class="buttonLabel"> {{ showBattlePass ? "Hide" : "Show" }} BattlePass </span>
-        </button>
-
-        <button class="done" @click.stop="toggleAiAssist" :class="{ fill: showAiAssist }">
-          <span class="material-symbols-rounded icon" :class="{ fill: showAiAssist }">cards_star</span>
-          <span class="buttonLabel"> {{ showAiAssist ? "Hide" : "Show" }} AI Assist </span>
-        </button>
-
-        <div class="divider">
-          <span>data</span>
-          <div class="horizontalLine"></div>
-        </div>
-
-        <!-- <button @click.stop="copyAllCSV">
-          <span class="material-symbols-rounded icon">content_copy</span>
-          <span class="buttonLabel"> Copy all to Clipboard</span>
-        </button>
-
-        <button @click.stop="pasteAllCSV">
-          <span class="material-symbols-rounded icon">content_paste</span>
-          <span class="buttonLabel"> Paste all from Clipboard </span>
-        </button> -->
-
-        <button @click.stop="saveAllCSVFile">
-          <span class="material-symbols-rounded icon">download</span>
-          <span class="buttonLabel"> Download CSV file </span>
-        </button>
-        <button @click.stop="openCSVFileDialog">
-          <span class="material-symbols-rounded icon">upload</span>
-          <span class="buttonLabel"> Upload CSV file </span>
-        </button>
+        <SimpleButton icon="download" label="Download CSV file" @click.stop="saveAllCSVFile" />
+        <SimpleButton icon="upload" label="Upload CSV file" @click.stop="openCSVFileDialog" />
         <input ref="csvInput" type="file" accept=".csv,text/csv" style="display:none" @change="onCSVFileSelected" />
 
-        <button class="clear" @click.stop="clearLocalStorage">
-          <span class="material-symbols-rounded icon">delete</span>
-          <span class="buttonLabel"> Clear ToDoList </span>
-        </button>
+        <SimpleButton class="clear" icon="delete" label="Clear ToDoList" @click.stop="clearLocalStorage" />
 
-        <div class="divider">
-          <span>info</span>
-          <div class="horizontalLine"></div>
-        </div>
+        <SimpleMenuDivider label="info" />
 
-        <button class="nimo" @click.stop="openNimoModal">
-          <nimoIcon />
-          <span class="buttonLabel"> About app, and author </span>
+        <SimpleButton class="nimo" label="About app, and author" @click.stop="openNimoModal">
+          <template #icon><nimoIcon /></template>
+        </SimpleButton>
+      </SimpleMenu>
+    </div>
+
+    <template v-if="!showCalendarView">
+      <BoardCanvas v-if="!showArchiveView" key="board" ref="board" :viewport="store.viewport">
+        <CanvasItem v-for="list in visibleTodos" :key="list.id" :item="list"
+          :locked="list.locked || store.settings.lockLayout" @front="store.bringToFront(list.id)"
+          @nestInto="nestListInto(list.id, $event)">
+          <toDoList :modelValue="list" isTopLevel @deleteToDo="deleteToDoById(list.id)" />
+        </CanvasItem>
+      </BoardCanvas>
+
+      <!-- Archive: the same live lists, read-only, shown where they sit on the board. -->
+      <BoardCanvas v-else key="archive" ref="board" mode="archive" :viewport="archiveViewport">
+        <CanvasItem v-for="list in archiveLists" :key="list.id" :item="list" locked>
+          <toDoList :modelValue="list" isTopLevel @deleteToDo="deleteToDoById(list.id)" />
+        </CanvasItem>
+      </BoardCanvas>
+
+      <div class="archiveBanner" v-if="showArchiveView" @click.stop>
+        <span class="material-symbols-rounded icon fill">inventory_2</span>
+        <span class="archiveTitle">Archive</span>
+        <span class="archiveCount">{{ archivedCount }} archived</span>
+        <button @click="closeArchiveView">
+          <span class="material-symbols-rounded icon">arrow_back</span>
+          <span class="buttonLabel">Back to board</span>
         </button>
       </div>
-    </div>
 
-    <BoardCanvas v-if="!showArchiveView" key="board" ref="board" :viewport="store.viewport">
-      <CanvasItem v-for="list in visibleTodos" :key="list.id" :item="list"
-        :locked="list.locked || store.settings.lockLayout" @front="store.bringToFront(list.id)">
-        <toDoList :modelValue="list" isTopLevel @deleteToDo="deleteToDoById(list.id)" />
-      </CanvasItem>
-    </BoardCanvas>
+      <div class="emptyState" v-if="showArchiveView && archiveLists.length === 0" @click.stop>
+        <p class="inlineTooltipBig">Nothing archived yet</p>
+        <p class="inlineTooltip">Archive a task or list from its menu and it will show up here.</p>
+        <button @click="closeArchiveView">Back to board</button>
+      </div>
 
-    <!-- Archive: the same live lists, read-only, shown where they sit on the board. -->
-    <BoardCanvas v-else key="archive" ref="board" mode="archive" :viewport="archiveViewport">
-      <CanvasItem v-for="list in archiveLists" :key="list.id" :item="list" locked>
-        <toDoList :modelValue="list" isTopLevel @deleteToDo="deleteToDoById(list.id)" />
-      </CanvasItem>
-    </BoardCanvas>
+      <div class="emptyState" v-if="!showArchiveView && visibleTodos.length === 0" @click.stop>
+        <p class="inlineTooltipBig">No todos found</p>
+        <p class="inlineTooltip">Add a new list, or start from the demo.</p>
+        <button @click="addTodo" class="addTodo">
+          <span class="material-symbols-rounded icon fill">add</span>
+        </button>
+        <div class="flexRowOr">
+          <hr />or
+          <hr />
+        </div>
+        <button @click="LoadDemo">Click here to load the Demo!</button>
+      </div>
+    </template>
 
-    <div class="archiveBanner" v-if="showArchiveView" @click.stop>
-      <span class="material-symbols-rounded icon fill">inventory_2</span>
-      <span class="archiveTitle">Archive</span>
-      <span class="archiveCount">{{ archivedCount }} archived</span>
-      <button @click="closeArchiveView">
-        <span class="material-symbols-rounded icon">arrow_back</span>
-        <span class="buttonLabel">Back to board</span>
-      </button>
-    </div>
+    <CalendarView v-else :todos="store.liveFlattenedTodos" @goto="scrollToItem" />
 
     <div class="hudTop" v-if="showBattlePass || showAiAssist" @click.stop>
       <BattlePass :doneCount="doneWeightedCount" :totalCount="totalWeightedCount" v-if="showBattlePass" />
       <AiSuggestion v-if="showAiAssist" />
     </div>
 
-    <div class="emptyState" v-if="showArchiveView && archiveLists.length === 0" @click.stop>
-      <p class="inlineTooltipBig">Nothing archived yet</p>
-      <p class="inlineTooltip">Archive a task or list from its menu and it will show up here.</p>
-      <button @click="closeArchiveView">Back to board</button>
-    </div>
-
-    <div class="emptyState" v-if="!showArchiveView && visibleTodos.length === 0" @click.stop>
-      <p class="inlineTooltipBig">No todos found</p>
-      <p class="inlineTooltip">Add a new list, or start from the demo.</p>
-      <button @click="addTodo" class="addTodo">
-        <span class="material-symbols-rounded icon fill">add</span>
-      </button>
-      <div class="flexRowOr">
-        <hr />or
-        <hr />
-      </div>
-      <button @click="LoadDemo">Click here to load the Demo!</button>
-    </div>
-
     <div class="mainButtons" @click.stop>
-      <button v-if="!showArchiveView" @click="addTodo" class="newList" title="New list">
-        <span class="material-symbols-rounded icon fill">add</span>
-        <span class="buttonLabel">New list</span>
-      </button>
-      <ZoomControls :zoom="store.viewport.zoom" @zoomIn="$refs.board.zoomBy(1.25)"
-        @zoomOut="$refs.board.zoomBy(0.8)" @reset="$refs.board.resetZoom()" @fit="$refs.board.fitAll()" />
+      <!-- <SimpleButton class="menuToggle" @click.stop="toggleMenu" icon="add_circle" /> -->
+      <SimpleButton v-if="!showArchiveView && !showCalendarView" class="menuToggle" @click="addTodo" icon="add_circle"
+        :active="true" title="New list"/>
+      <ZoomControls v-if="!showCalendarView" :zoom="store.viewport.zoom" :can-arrange="!lockLayout && !showArchiveView"
+        @zoomIn="$refs.board.zoomBy(1.25)" @zoomOut="$refs.board.zoomBy(0.8)" @reset="$refs.board.resetZoom()"
+        @fit="$refs.board.fitAll()" @arrange="arrangeLists" />
     </div>
 
     <div id="modals" v-if="showModals" @click="closeAllModals">
@@ -150,6 +106,9 @@
             <nimoIcon />
             <span>About</span>
             <div class="horizontalLine"></div>
+            <button class="closeModal" @click="openChangelogModal" title="Changelog">
+              <span class="material-symbols-rounded icon">history</span>
+            </button>
             <button class="closeModal" @click="closeAllModals">×</button>
           </div>
           <div class="modalBody">
@@ -160,7 +119,7 @@
               <span class="title">ProgressTODO</span>
               <span class="version">{{ appVersion }} | {{ releaseDate }}</span>
               <span class="author">by:&nbsp;
-                <a href="https://nimoweb.ddns.net">nimo</a>
+                <a href="https://nimoweb.pl">nimo</a>
               </span>
             </div>
 
@@ -180,11 +139,11 @@
               </div>
               <div class="nimoName">Sebastian <span style="color: #00aaff;">nimo</span> Legierski</div>
 
-              <a href="https://nimoweb.ddns.net" class="nimoWebLink">
+              <a href="https://nimoweb.pl" class="nimoWebLink">
                 <span class="material-symbols-rounded icon fill">language</span>
                 Website
               </a>
-              <a href="https://nimoweb.ddns.net/contact" class="nimoContact">
+              <a href="https://nimoweb.pl/contact" class="nimoContact">
                 <span class="material-symbols-rounded icon fill">mail</span>
                 Contact
               </a>
@@ -192,6 +151,41 @@
                 HI, im nimo!<br> Check out some of my other projects, and feel free to get in touch with me via mail, or
                 message me on any of my social medias!
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="changelogModal" v-if="showChangelogModal">
+          <div class="modalHeader">
+            <span class="material-symbols-rounded icon fill">history</span>
+            <span>changelog</span>
+            <div class="horizontalLine"></div>
+            <button class="closeModal" @click="closeAllModals">
+              <span class="material-symbols-rounded icon fill">close</span>
+            </button>
+          </div>
+          <div class="modalBody">
+            <div v-for="entry in changelog" :key="entry.version" class="changelogEntry">
+              <div class="changelogEntryHeader">
+                <span class="changelogVersion">{{ entry.version }}</span>
+                <span class="changelogDate" v-if="entry.date">{{ entry.date }}</span>
+              </div>
+              <ul class="changelogChanges">
+                <li v-for="change in entry.changes" :key="change">{{ change }}</li>
+              </ul>
+            </div>
+
+            <div class="changelogEntry future">
+              <div class="changelogEntryHeader">
+                <span class="changelogVersion">What's next</span>
+              </div>
+              <div v-for="group in futureIdeas" :key="group.category" class="futureGroup">
+                <div class="futureCategory">{{ group.category }}</div>
+                <ul class="changelogChanges">
+                  <li v-for="idea in group.items" :key="idea">{{ idea }}</li>
+                </ul>
+              </div>
+              <p class="andMore">...and more!!!</p>
             </div>
           </div>
         </div>
@@ -260,12 +254,12 @@ import { useTodosStore, installTodosPersistence } from '@/assets/stores/globalSt
 import toDoList from "@/assets/components/toDoList.vue";
 import AiSuggestion from "@/assets/components/aiSuggestion.vue";
 
-import { appVersion, releaseDate } from "./assets/js/consts";
+import { appVersion, releaseDate, changelog, futureIdeas } from "./assets/js/consts";
 import Favicon from "./assets/svg/Favicon.vue";
 import nimoIcon from "./assets/svg/nimoIcon.vue";
 import { templateTodos } from "./assets/js/consts.js";
-import { createNode } from "@/assets/js/tree.js";
-import { focusTodo, snapToGrid } from "@/assets/js/board.js";
+import { createNode, findNode, normalizeNode } from "@/assets/js/tree.js";
+import { arrangeGrid, focusTodo, orderByHeight, snapToGrid } from "@/assets/js/board.js";
 
 // Columns of the CSV backup. Older files without the last four columns still import.
 const CSV_HEADERS = [
@@ -278,6 +272,11 @@ import BattlePass from "@/assets/components/BattlePass.vue";
 import BoardCanvas from "@/assets/components/BoardCanvas.vue";
 import CanvasItem from "@/assets/components/CanvasItem.vue";
 import ZoomControls from "@/assets/components/ZoomControls.vue";
+import CalendarView from "@/assets/components/CalendarView.vue";
+
+import SimpleButton from "@/assets/ui/SimpleButton.vue";
+import SimpleMenu from "@/assets/ui/SimpleMenu.vue";
+import SimpleMenuDivider from "@/assets/ui/SimpleMenuDivider.vue";
 
 export default {
   name: "App",
@@ -290,6 +289,10 @@ export default {
     BoardCanvas,
     CanvasItem,
     ZoomControls,
+    CalendarView,
+    SimpleButton,
+    SimpleMenu,
+    SimpleMenuDivider,
   },
   setup() {
     const store = useTodosStore();
@@ -303,15 +306,30 @@ export default {
       showNimoModal: false,
       showStarModal: false,
       showUrgentModal: false,
+      showChangelogModal: false,
       showArchiveView: false,
+      showCalendarView: false,
       // Separate, unsaved view for the archive so the board keeps its own position.
       archiveViewport: { x: 0, y: 0, zoom: 1 },
 
       appVersion: appVersion,
       releaseDate: releaseDate,
+      changelog: changelog,
+      futureIdeas: futureIdeas,
     };
   },
   methods: {
+    // Dropping a board list onto another list nests it there — the reverse of "Extract to Board".
+    nestListInto(listId, targetId) {
+      const index = this.store.todos.findIndex(t => t.id === listId);
+      const target = findNode(this.store.todos, targetId);
+      if (index < 0 || !target || target.type !== 'list') return;
+      const [node] = this.store.todos.splice(index, 1);
+      delete node.pos;
+      delete node.z;
+      normalizeNode(node, false); // strips `locked` — only top-level nodes carry it
+      target.todos.push(node);
+    },
     // New lists appear in the middle of the current view (cascading if that spot is taken).
     addTodo() {
       const center = this.$refs.board.viewCenter();
@@ -321,6 +339,23 @@ export default {
         pos.y += 32;
       }
       this.store.addTodo(createNode('list', { pos }));
+    },
+    // Repacks every unlocked list into a tidy grid, sized to how it currently renders.
+    arrangeLists() {
+      if (this.lockLayout) return;
+      const sizes = new Map(this.$refs.board.itemSizes().map(s => [s.id, s]));
+      const items = this.store.visibleTodos
+        .filter(t => !t.locked)
+        .map(t => {
+          const size = sizes.get(t.id);
+          return { id: t.id, width: size?.width || 400, height: size?.height || 200 };
+        });
+      const positions = new Map(arrangeGrid(orderByHeight(items), { gap: 48 }).map(p => [p.id, p]));
+      this.store.visibleTodos.forEach(t => {
+        const p = positions.get(t.id);
+        if (p) t.pos = { x: snapToGrid(p.x), y: snapToGrid(p.y) };
+      });
+      this.$nextTick(() => this.$refs.board.fitAll());
     },
 
 // #region LOCALSTORAGE 
@@ -374,12 +409,25 @@ export default {
       else this.openArchiveView();
     },
     openArchiveView() {
+      this.closeCalendarView();
       this.showArchiveView = true;
       this.showMenu = false;
       this.$nextTick(() => this.$refs.board.fitAll({ animate: false }));
     },
     closeArchiveView() {
       this.showArchiveView = false;
+    },
+    toggleCalendarView() {
+      if (this.showCalendarView) this.closeCalendarView();
+      else this.openCalendarView();
+    },
+    openCalendarView() {
+      this.closeArchiveView();
+      this.showCalendarView = true;
+      this.showMenu = false;
+    },
+    closeCalendarView() {
+      this.showCalendarView = false;
     },
     toggleShowDone() {
       this.store.toggleShowDone();
@@ -412,6 +460,7 @@ export default {
       this.showNimoModal = false;
       this.showStarModal = false;
       this.showUrgentModal = false;
+      this.showChangelogModal = false;
     },
     openStarModal() {
       this.closeAllModals();
@@ -424,6 +473,10 @@ export default {
     openNimoModal() {
       this.closeAllModals();
       this.showNimoModal = !this.showNimoModal;
+    },
+    openChangelogModal() {
+      this.closeAllModals();
+      this.showChangelogModal = !this.showChangelogModal;
     },
     handleEscape(e) {
       if (e.key === 'Escape') {
@@ -442,8 +495,11 @@ export default {
     },
     scrollToItem(id) {
       this.closeArchiveView();
-      focusTodo(id);
+      this.closeCalendarView();
       this.closeAllModals();
+      // Closing a view swaps the board back in on the next render; wait for it to mount
+      // before dispatching the focus event, or BoardCanvas isn't listening yet to catch it.
+      this.$nextTick(() => focusTodo(id));
     },
     flattenTodos(todos, parent = null) {
       let flattened = [];
@@ -626,13 +682,8 @@ export default {
           return;
         }
         const tree = this.rebuildTodosFromCSV(rows);
-        if (this.store) {
-          this.store.replaceTodos(tree);
-          this.store.persistNow?.();
-        } else {
-          this.todos = tree;
-          this.updateLocalStorage?.();
-        }
+        this.store.replaceTodos(tree);
+        this.store.persistNow();
         alert('Todos pasted from CSV!');
       }).catch(() => alert('Failed to read clipboard.'));
     },
@@ -688,13 +739,8 @@ export default {
             return;
           }
           const tree = this.rebuildTodosFromCSV(rows);
-          if (this.store) {
-            this.store.todos = tree;
-            this.store.persistNow?.();
-          } else {
-            this.todos = tree;
-            this.updateLocalStorage?.();
-          }
+          this.store.replaceTodos(tree);
+          this.store.persistNow();
           alert('CSV imported!');
         } catch (err) {
           console.warn('CSV import error:', err);
@@ -721,7 +767,7 @@ export default {
     },
   },
   computed: {
-    showModals() { return this.showNimoModal || this.showStarModal || this.showUrgentModal; },
+    showModals() { return this.showNimoModal || this.showStarModal || this.showUrgentModal || this.showChangelogModal; },
     todos: { get() { return this.store.todos; } },
     archiveLists() { return this.store.archiveLists; },
     archivedCount() { return this.store.archivedCount; },
@@ -839,11 +885,22 @@ export default {
 }
 
 .mainButtons .newList {
-  display: flex;
+  flex-grow: 0;
+  width: auto;
   align-items: center;
   gap: 0.25rem;
   height: 2.75rem;
   padding: 0 0.875rem 0 0.625rem;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
+}
+
+/* SimpleButton defaults to a full-width row for vertical dropdown menus; here it's one icon
+   button in a horizontal toolbar cluster, sized to match its neighbors. */
+.mainButtons .menuToggle {
+  flex-grow: 0;
+  width: auto;
+  height: 2.75rem;
+  padding: 0 0.75rem;
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
 }
 
@@ -1104,6 +1161,74 @@ export default {
 }
 
 
+/* Changelog */
+
+.changelogEntry {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #282a30;
+}
+
+.changelogEntry:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.changelogEntryHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.changelogVersion {
+  color: #00aaff;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.changelogDate {
+  color: #7c8187;
+  font-size: 0.75rem;
+}
+
+.changelogChanges {
+  margin: 0;
+  padding-left: 1.25rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  color: #c9cacf;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.futureGroup {
+  margin-top: 0.75rem;
+}
+
+.futureGroup:first-of-type {
+  margin-top: 0;
+}
+
+.futureCategory {
+  margin-bottom: 0.25rem;
+  color: #7c8187;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.andMore {
+  margin-top: 0.75rem;
+  color: #7c8187;
+  font-size: 0.85rem;
+  font-style: italic;
+  text-align: center;
+}
+
+
 
 
 
@@ -1127,6 +1252,12 @@ export default {
 
 .nimoModal .modalHeader {
   padding: 0.75rem 1rem;
+}
+
+.nimoModal .modalHeader svg.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
 }
 
 

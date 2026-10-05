@@ -22,130 +22,61 @@
                 </div>
 
                 <div class="emoji" @click="!archiveMode && toggleEmojiPicker()"> {{ todo.emoji || '📝' }} </div>
-                <emoji-picker @click.stop v-if="showEmojiPicker" @select="selectEmoji" theme="auto" />
+                <nimoEmojiPicker class="emojiPickerPopup" v-if="showEmojiPicker" v-model="todo.emoji" @picked="showEmojiPicker = false" />
                 <input type="text" class="toDoName" v-model="todo.text" :readonly="archiveMode">
                 <div class="menu" v-if="hasMenu" @click.stop="toggleMenu">
                     <span class="menuOpenButton"> ... </span>
                     <ContextMenu v-if="showMenu" :anchorId="todo.id" :owner="todo.id" kind="list">
-                    <div class="buttons show">
+                    <SimpleMenu>
                         <template v-if="!archiveMode">
                         <template v-if="isTopLevel">
-                            <div class="divider">
-                                <span>board</span>
-                                <div class="horizontalLine"></div>
-                            </div>
-                            <button class="lock" @click.stop="toggleLocked" :class="{ fill: todo.locked }">
-                                <span class="material-symbols-rounded icon" :class="{ fill: todo.locked }">{{ todo.locked ? 'lock' : 'lock_open' }}</span>
-                                <span class="buttonLabel"> {{ todo.locked ? "Unlock Position" : "Lock Position" }} </span>
-                            </button>
+                            <SimpleMenuDivider label="board" />
+                            <SimpleButton class="lock" :icon="todo.locked ? 'lock' : 'lock_open'" :active="todo.locked"
+                                :label="(todo.locked ? 'Unlock' : 'Lock') + ' Position'" @click.stop="toggleLocked" />
+                        </template>
+                        <template v-else>
+                            <SimpleMenuDivider label="board" />
+                            <SimpleButton class="add" icon="open_in_new" label="Extract to Board" @click.stop="extractToBoard" />
                         </template>
 
-                        <div class="divider">
-                            <span>add</span>
-                            <div class="horizontalLine"></div>
-                        </div>
+                        <SimpleMenuDivider label="add" />
 
-                        <button class="add" @click.stop="addCheckBoxToDo">
-                            <span class="material-symbols-rounded icon">check_box</span>
-                            <span class="buttonLabel"> Add CheckBox Todo </span>
-                        </button>
+                        <SimpleButton class="add" icon="check_box" label="Add CheckBox Todo" @click.stop="addCheckBoxToDo" />
+                        <SimpleButton class="add" icon="switches" label="Add ToDo Bar" @click.stop="addBarToDo" />
+                        <SimpleButton class="add" icon="lists" label="Add ToDo List" @click.stop="addToDoList" />
 
-                        <button class="add" @click.stop="addBarToDo">
-                            <span class="material-symbols-rounded icon">switches</span>
-                            <span class="buttonLabel"> Add ToDo Bar </span>
-                        </button>
-
-                        <button class="add" @click.stop="addToDoList">
-                            <span class="material-symbols-rounded icon">lists</span>
-                            <span class="buttonLabel"> Add ToDo List </span>
-                        </button>
-
-                        <div class="divider">
-                            <span>highlight</span>
-                            <div class="horizontalLine"></div>
-                        </div>
-                        <button class="star" @click.stop="toggleStared" :class="{ fill: todo.star }">
-                            <span class="material-symbols-rounded icon" :class="{ fill: todo.star }">star</span>
-                            <span class="buttonLabel"> Star</span>
-                        </button>
-                        <button class="urgent" @click.stop="toggleUrgent" :class="{ fill: todo.urgent }">
-                            <span class="material-symbols-rounded icon" :class="{ fill: todo.urgent }">mode_heat</span>
-                            <span class="buttonLabel"> Urgent </span>
-                        </button>
-                        <button class="archived" @click.stop="toggleArchived" :class="{ fill: todo.archived }">
-                            <span class="material-symbols-rounded icon"
-                                :class="{ fill: todo.archived }">inventory_2</span>
-                            <span class="buttonLabel"> Archive </span>
-                        </button>
-                        <button class="color" @click.stop="openColorPallete"
-                            :style="{ '--backgroundColor': todo.color }">
-                            <span class="material-symbols-rounded icon">palette</span>
-                            <span class="buttonLabel"> Change Color </span>
-                        </button>
+                        <SimpleMenuDivider label="highlight" />
+                        <SimpleButton class="star" icon="star" :active="todo.star" label="Star" @click.stop="toggleStared" />
+                        <SimpleButton class="urgent" icon="mode_heat" :active="todo.urgent" label="Urgent" @click.stop="toggleUrgent" />
+                        <SimpleButton class="archived" icon="inventory_2" :active="todo.archived" label="Archive" @click.stop="toggleArchived" />
+                        <SimpleButton class="color" icon="palette" label="Change Color" :style="{ '--backgroundColor': todo.color }"
+                            @click.stop="openColorPallete" />
                         <div class="colorPallete" v-if="showColorPallete" @click.stop>
                             <nimoColorPicker v-model="todo.color" />
                         </div>
 
-                        <div class="divider">
-                            <span>modify</span>
-                            <div class="horizontalLine"></div>
-                        </div>
+                        <SimpleMenuDivider label="modify" />
 
-                        <button class="toggleProgress" @click.stop="toggleProgress">
-                            <span class="material-symbols-rounded icon">percent</span>
-                            <span class="buttonLabel"> {{ todo.progressVisable ? "Hide Progress" : "Show Progress" }}
-                            </span>
-                        </button>
+                        <SimpleButton class="toggleProgress" icon="percent"
+                            :label="(todo.progressVisable ? 'Hide' : 'Show') + ' Progress'" @click.stop="toggleProgress" />
+                        <SimpleButton class="toggleCountdown" icon="timer"
+                            :label="(todo.countdownVisable ? 'Hide' : 'Show') + ' countdown'" @click.stop="toggleCountdown" />
+                        <SimpleButton class="toggleBinaryProgress" icon="show_chart"
+                            :label="todo.progressBinary ? 'Linear Progress' : 'Binary Progress'" @click.stop="toggleBinaryProgress" />
 
-                        <button class="toggleCountdown" @click.stop="toggleCountdown">
-                            <span class="material-symbols-rounded icon">timer</span>
-                            <span class="buttonLabel"> {{ todo.countdownVisable ? "Hide Countdown" : "Show countdown" }}
-                            </span>
-                        </button>
+                        <SimpleWeightPicker v-model="todo.weight" />
 
-                        <button class="toggleBinaryProgress" @click.stop="toggleBinaryProgress">
-                            <span class="material-symbols-rounded icon">show_chart</span>
-                            <span class="buttonLabel"> {{ todo.progressBinary ? "Linear Progress" : "Binary Progress" }}
-                            </span>
-                        </button>
+                        <SimpleMenuDivider label="delete" />
 
-                        <div class="honoraryButton" @click.stop>
-                            <span class="material-symbols-rounded icon">balance</span>
-                            <input @click.stop type="number" v-model="todo.weight" />
-                        </div>
-
-
-                        <div class="divider">
-                            <span>delete</span>
-                            <div class="horizontalLine"></div>
-                        </div>
-
-                        <button class="clear" @click.stop="clearToDoList">
-
-                            <span class="material-symbols-rounded icon">cleaning_services</span>
-                            <span class="buttonLabel"> Clear ToDoList </span>
-                        </button>
-
-                        <button class="delete" @click.stop="deleteToDo">
-                            <span class="material-symbols-rounded icon">delete</span>
-                            <span class="buttonLabel"> Delete List </span>
-                        </button>
+                        <SimpleButton class="clear" icon="cleaning_services" label="Clear ToDoList" @click.stop="clearToDoList" />
+                        <SimpleButton class="delete" icon="delete" label="Delete List" @click.stop="deleteToDo" />
                         </template>
                         <template v-else>
-                            <div class="divider">
-                                <span>archive</span>
-                                <div class="horizontalLine"></div>
-                            </div>
-                            <button class="restore" @click.stop="restoreFromArchive">
-                                <span class="material-symbols-rounded icon">unarchive</span>
-                                <span class="buttonLabel"> Restore </span>
-                            </button>
-                            <button class="delete" @click.stop="deleteFromArchive">
-                                <span class="material-symbols-rounded icon">delete_forever</span>
-                                <span class="buttonLabel"> Delete Permanently </span>
-                            </button>
+                            <SimpleMenuDivider label="archive" />
+                            <SimpleButton class="restore" icon="unarchive" label="Restore" @click.stop="restoreFromArchive" />
+                            <SimpleButton class="delete" icon="delete_forever" label="Delete Permanently" @click.stop="deleteFromArchive" />
                         </template>
-                    </div>
+                    </SimpleMenu>
                     </ContextMenu>
                 </div>
             </div>
@@ -173,13 +104,14 @@
 
             <Draggable class="draggables" v-model="todo.todos" item-key="id" group="todos" handle=".dragHandle" :disabled="archiveMode"
                 :animation="200" :ghost-class="'drag-ghost'"
-                :filter="'.menu, .colorPallete, input, button, .v3-emoji-picker'" :prevent-on-filter="false">
+                :filter="'.menu, .colorPallete, input, button, .emojiPicker'" :prevent-on-filter="false">
                 <template #item="{ element, index }">
                     <component
                         v-show="isVisibleChild(element)"
                         :is="element.component"
                         v-model="todo.todos[index]"
                         @deleteToDo="deleteElement(index)"
+                        @extractToBoard="extractElement(index)"
                         :parentColor="todo.color ? todo.color : parentColor"
                         :inheritedArchived="effectivelyArchived"
                     />
@@ -192,8 +124,7 @@
 <script>
 import checkBoxToDo from '@/assets/components/checkBoxToDo.vue';
 import barToDo from '@/assets/components/barToDo.vue';
-import EmojiPicker from 'vue3-emoji-picker';
-import 'vue3-emoji-picker/css';
+import nimoEmojiPicker from '@/assets/components/nimoEmojiPicker.vue';
 import nimoColorPicker from '@/assets/components/nimoColorPicker.vue';
 import ContextMenu from '@/assets/components/ContextMenu.vue';
 import contextMenuHost from '@/assets/js/contextMenuHost.js';
@@ -203,7 +134,12 @@ import Draggable from 'vuedraggable';
 
 import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
 import { computeListProgress, createNode, isNodeVisible, pruneLive, setArchived } from '@/assets/js/tree.js';
+import { focusTodo } from '@/assets/js/board.js';
 import archiveMode from '@/assets/js/archiveMode.js';
+import SimpleMenu from '@/assets/ui/SimpleMenu.vue';
+import SimpleMenuDivider from '@/assets/ui/SimpleMenuDivider.vue';
+import SimpleButton from '@/assets/ui/SimpleButton.vue';
+import SimpleWeightPicker from '@/assets/ui/SimpleWeightPicker.vue';
 
 
 export default {
@@ -212,11 +148,16 @@ export default {
     components: {
         ContextMenu,
         checkBoxToDo,
-        EmojiPicker,
+        nimoEmojiPicker,
         barToDo,
-        toDoList: () => import('@/assets/components/toDoList.vue'),
+        // No self-import needed for recursion: Vue resolves <toDoList> to this component via its
+        // own `name` below (that's also what caused the dynamic+static-import build warning).
 
         nimoColorPicker,
+        SimpleMenu,
+        SimpleMenuDivider,
+        SimpleButton,
+        SimpleWeightPicker,
 
         Draggable,
     },
@@ -271,6 +212,16 @@ export default {
             this.todo.todos.splice(index, 1);
             this.updateProgress();
         },
+        // Pulls a nested list out of its parent and promotes it to a standalone list on the board.
+        extractElement(index) {
+            const [node] = this.todo.todos.splice(index, 1);
+            this.store.addTodo(node);
+            this.updateProgress();
+            this.$nextTick(() => focusTodo(node.id));
+        },
+        extractToBoard() {
+            this.$emit('extractToBoard', this.todo);
+        },
         deleteToDo() {
             if (!this.confirmDeleteWithArchived()) return;
             this.$emit('deleteToDo', this.todo);
@@ -318,11 +269,6 @@ export default {
                 this.showEmojiPicker = false;
                 this.showColorPallete = false;
             }
-        },
-        selectEmoji(emoji) {
-            console.log('Selected emoji:', emoji);
-            this.todo.emoji = emoji.i;
-            this.showEmojiPicker = false;
         },
         toggleEmojiPicker() {
             this.showEmojiPicker = !this.showEmojiPicker;
@@ -568,7 +514,7 @@ export default {
     transition: 0.05s;
 }
 
-.header .v3-emoji-picker {
+.header .emojiPickerPopup {
     position: absolute;
     top: 0;
     left: 2rem;

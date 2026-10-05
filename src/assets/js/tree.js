@@ -36,7 +36,7 @@ export function createNode(type, overrides = {}) {
         weight: 1,
 
         dateStart: nowLocal(),
-        dateEnd: nowLocal(86400000), // 24h later
+        dateEnd: null, // no due date until something (e.g. a list's countdown) sets one
 
         star: false,
         urgent: false,

@@ -26,6 +26,13 @@ button .material-symbols-rounded.icon {
     font-size: 1.35rem;
 }
 
+.simpleMenu .colorPallete {
+    position: absolute;
+    top: 0;
+    right: calc(100% + 0.5rem);
+    z-index: 1000;
+}
+
 #app {
     display: flex;
     flex-direction: column;
@@ -95,105 +102,6 @@ body {
 ::-webkit-scrollbar-thumb:active {
     background-color: #cacaca;
 }
-
-
-
-
-
-
-button,
-.honoraryButton {
-    padding: 0.5rem;
-
-    color: #7c8187;
-    background-color: #282a30;
-    border: 1px solid #3c3e43;
-    border-radius: 0.5rem;
-
-    cursor: pointer;
-    user-select: none;
-
-    transition: 0.2s;
-}
-
-button:hover {
-    color: #fff;
-    transform: translateY(-0.125rem);
-
-    transition: 0.1s;
-}
-
-button:active {
-    color: #fff;
-    transform: translateY(0.0625rem);
-
-    transition: 0.05s;
-}
-
-button:hover {
-    background-color: #5e5e5e;
-}
-
-button:active {
-    background-color: #cacaca;
-}
-
-button.add:hover {
-    background-color: #316841;
-}
-
-button.add:active {
-    background-color: #00cc2c;
-}
-
-button.delete:hover {
-    background-color: #70393d;
-}
-
-button.delete:active {
-    background-color: #d43a3a;
-}
-
-button.clear:hover {
-    background-color: #70393d;
-}
-
-button.clear:active {
-    background-color: #d43a3a;
-}
-
-button.star:hover {
-    background-color: #686331;
-}
-
-button.star:active {
-    background-color: #cc8b00;
-}
-
-button.urgent:hover {
-    background-color: #683331;
-}
-
-button.urgent:active {
-    background-color: #d43a3a;
-}
-
-button.color:hover {
-    background-color: color-mix(in srgb, #5e5e5e, var(--backgroundColor) 20%);
-}
-
-button.color:active {
-    background-color: color-mix(in srgb, #cacaca, var(--backgroundColor) 50%);
-}
-
-
-.buttons .colorPallete {
-    position: absolute;
-    top: 0;
-    right: calc(100% + 0.5rem);
-    z-index: 1000;
-}
-
 
 
 /* #region MEDALS */

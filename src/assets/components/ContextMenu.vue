@@ -190,8 +190,8 @@ export default {
     opacity: 0.9;
 }
 
-/* The menu's buttons keep their styles; only their old "drop down under the ..." placement is undone. */
-body .contextMenu > .buttons.show {
+/* The menu keeps its own look; only its "drop down under the ..." placement is undone. */
+body .contextMenu > .simpleMenu.show {
     position: static;
     transform: none;
     border: none;
@@ -200,7 +200,7 @@ body .contextMenu > .buttons.show {
     min-height: 0;
 }
 
-.contextMenu.popupsRight .buttons .colorPallete {
+.contextMenu.popupsRight .simpleMenu .colorPallete {
     right: auto;
     left: calc(100% + 0.5rem);
 }

@@ -39,70 +39,35 @@
         <div class="menu" v-if="hasMenu" @click="toggleMenu">
             <span class="menuOpenButton"> ... </span>
             <ContextMenu v-if="showMenu" :anchorId="todo.id" :owner="todo.id" kind="bar">
-            <div class="buttons show">
+            <SimpleMenu>
                 <template v-if="!archiveMode">
-                <div class="divider">
-                    <span>modify</span>
-                    <div class="horizontalLine"></div>
-                </div>
-                <div class="honoraryButton" @click.stop>
-                    <NameIcon />
-                    <input @click.stop type="text" v-model="todo.text" :style="{ width: textWidth + 'ch' }"
-                        @input="adjustWidth" />
-                </div>
-                <div class="honoraryButton" @click.stop>
-                    <span class="material-symbols-rounded icon">balance</span>
-                    <input @click.stop type="number" v-model="todo.weight" />
-                </div>
+                <SimpleMenuDivider label="modify"/>
+                <SimpleFieldButton>
+                    <template #icon><NameIcon /></template>
+                    <input type="text" v-model="todo.text" :style="{ width: textWidth + 'ch' }" @input="adjustWidth" />
+                </SimpleFieldButton>
+                <SimpleWeightPicker v-model="todo.weight" />
 
-                <div class="divider">
-                    <span>highlight</span>
-                    <div class="horizontalLine"></div>
-                </div>
-                <button class="star" @click.stop="toggleStared" :class="{ fill: todo.star }">
-                    <span class="material-symbols-rounded icon" :class="{ fill: todo.star }">star</span>
-                    <span class="buttonLabel"> Star</span>
-                </button>
-                <button class="urgent" @click.stop="toggleUrgent" :class="{ fill: todo.urgent }">
-                    <span class="material-symbols-rounded icon" :class="{ fill: todo.urgent }">mode_heat</span>
-                    <span class="buttonLabel"> Urgent </span>
-                </button>
-                <button class="archived" @click.stop="toggleArchived" :class="{ fill: todo.archived }">
-                    <span class="material-symbols-rounded icon" :class="{ fill: todo.archived }">inventory_2</span>
-                    <span class="buttonLabel"> Archive </span>
-                </button>
-                <button class="color" @click.stop="openColorPallete" :style="{ '--backgroundColor': todo.color }">
-                    <span class="material-symbols-rounded icon">palette</span>
-                    <span class="buttonLabel"> Change Color </span>
-                </button>
+                <SimpleMenuDivider label="highlight"/>
+
+                <SimpleButton class="star" icon="star" :active="todo.star" label="Star" @click.stop="toggleStared" />
+                <SimpleButton class="urgent" icon="mode_heat" :active="todo.urgent" label="Urgent" @click.stop="toggleUrgent" />
+                <SimpleButton class="archived" icon="inventory_2" :active="todo.archived" label="Archive" @click.stop="toggleArchived" />
+                <SimpleButton class="color" icon="palette" label="Change Color" :style="{ '--backgroundColor': todo.color }"
+                    @click.stop="openColorPallete" />
                 <div class="colorPallete" v-if="showColorPallete" @click.stop>
                     <nimoColorPicker v-model="todo.color" />
                 </div>
 
-                <div class="divider">
-                    <span>delete</span>
-                    <div class="horizontalLine"></div>
-                </div>
-                <button class="delete" @click.stop="deleteToDo">
-                    <span class="material-symbols-rounded icon">delete</span>
-                    <span class="buttonLabel"> Delete ToDo </span>
-                </button>
+                <SimpleMenuDivider label="delete"/>
+                <SimpleButton class="delete" icon="delete" label="Delete ToDo" @click.stop="deleteToDo" />
                 </template>
                 <template v-else>
-                    <div class="divider">
-                        <span>archive</span>
-                        <div class="horizontalLine"></div>
-                    </div>
-                    <button class="restore" @click.stop="restoreFromArchive">
-                        <span class="material-symbols-rounded icon">unarchive</span>
-                        <span class="buttonLabel"> Restore </span>
-                    </button>
-                    <button class="delete" @click.stop="deleteFromArchive">
-                        <span class="material-symbols-rounded icon">delete_forever</span>
-                        <span class="buttonLabel"> Delete Permanently </span>
-                    </button>
+                    <SimpleMenuDivider label="archive"/>
+                    <SimpleButton class="restore" icon="unarchive" label="Restore" @click.stop="restoreFromArchive" />
+                    <SimpleButton class="delete" icon="delete_forever" label="Delete Permanently" @click.stop="deleteFromArchive" />
                 </template>
-            </div>
+            </SimpleMenu>
             </ContextMenu>
         </div>
     </div>
@@ -119,6 +84,12 @@ import ContextMenu from '@/assets/components/ContextMenu.vue';
 import contextMenuHost from '@/assets/js/contextMenuHost.js';
 import { contrastColorFromRgbLike } from '@/assets/js/functions.js';
 
+import SimpleMenu from '@/assets/ui/SimpleMenu.vue';
+import SimpleMenuDivider from '@/assets/ui/SimpleMenuDivider.vue';
+import SimpleButton from '@/assets/ui/SimpleButton.vue';
+import SimpleFieldButton from '@/assets/ui/SimpleFieldButton.vue';
+import SimpleWeightPicker from '@/assets/ui/SimpleWeightPicker.vue';
+
 export default {
     name: 'barToDo',
     mixins: [archiveMode, contextMenuHost],
@@ -126,6 +97,11 @@ export default {
         ContextMenu,
         NameIcon,
         nimoColorPicker,
+        SimpleMenu,
+        SimpleMenuDivider,
+        SimpleButton,
+        SimpleFieldButton,
+        SimpleWeightPicker,
     },
     setup() {
         const store = useTodosStore();

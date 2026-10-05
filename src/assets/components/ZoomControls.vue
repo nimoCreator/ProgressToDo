@@ -1,29 +1,29 @@
 <template>
     <div class="zoomControls" @click.stop @pointerdown.stop>
-        <button class="zoomOut" @click="$emit('zoomOut')" :disabled="zoom <= minZoom" title="Zoom out (Ctrl + scroll)">
-            <span class="material-symbols-rounded icon">remove</span>
-        </button>
-        <button class="zoomValue" @click="$emit('reset')" title="Reset zoom to 100%">
-            {{ Math.round(zoom * 100) }}%
-        </button>
-        <button class="zoomIn" @click="$emit('zoomIn')" :disabled="zoom >= maxZoom" title="Zoom in (Ctrl + scroll)">
-            <span class="material-symbols-rounded icon">add</span>
-        </button>
-        <button class="fitAll" @click="$emit('fit')" title="Show all lists">
-            <span class="material-symbols-rounded icon">fit_screen</span>
-        </button>
+        <SimpleButton class="small zoomOut" icon="remove" :disabled="zoom <= minZoom" title="Zoom out (Ctrl + scroll)"
+            @click="$emit('zoomOut')" />
+        <SimpleButton class="small zoomValue" :label="Math.round(zoom * 100) + '%'" title="Reset zoom to 100%"
+            @click="$emit('reset')" />
+        <SimpleButton class="small zoomIn" icon="add" :disabled="zoom >= maxZoom" title="Zoom in (Ctrl + scroll)"
+            @click="$emit('zoomIn')" />
+        <SimpleButton class="small fitAll" icon="fit_screen" title="Show all lists" @click="$emit('fit')" />
+        <SimpleButton class="small arrange" icon="grid_view" :disabled="!canArrange" title="Arrange lists in a grid"
+            @click="$emit('arrange')" />
     </div>
 </template>
 
 <script>
 import { MAX_ZOOM, MIN_ZOOM } from '@/assets/js/board.js';
+import SimpleButton from '@/assets/ui/SimpleButton.vue';
 
 export default {
     name: 'ZoomControls',
+    components: { SimpleButton },
     props: {
         zoom: { type: Number, required: true },
+        canArrange: { type: Boolean, default: true },
     },
-    emits: ['zoomIn', 'zoomOut', 'reset', 'fit'],
+    emits: ['zoomIn', 'zoomOut', 'reset', 'fit', 'arrange'],
     data() {
         return { minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM };
     },
@@ -43,25 +43,14 @@ export default {
     box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5);
 }
 
-.zoomControls button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 2.25rem;
-    min-width: 2.25rem;
-    padding: 0 0.5rem;
-}
-
 .zoomControls .zoomValue {
     min-width: 3.75rem;
-    font-variant-numeric: tabular-nums;
-    font-size: 0.85rem;
 }
 
-.zoomControls button:disabled {
-    opacity: 0.4;
-    cursor: default;
-    transform: none;
-    background-color: #282a30;
+.zoomControls .zoomValue :deep(.buttonLabel) {
+    flex-grow: 1;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
 }
 </style>
